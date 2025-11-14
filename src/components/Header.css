@@ -26,33 +26,22 @@
   font-weight: 700;
   letter-spacing: 3px;
   cursor: pointer;
-}
-
-.logo-text {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+}
+
+.logo-image {
+  height: 50px;
+  max-width: 200px;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(1) contrast(1.1);
   transition: all 0.3s ease;
 }
 
-.logo-accent {
-  font-size: 20px;
-  color: #ffffff;
-  display: inline-block;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
+.logo:hover .logo-image {
+  filter: brightness(1.2) contrast(1.15);
+  transform: scale(1.05);
 }
 
 .nav {

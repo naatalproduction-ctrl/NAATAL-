@@ -21,16 +21,13 @@ export default function Header() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="logo">
-          <motion.div 
-            className="logo-text"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span className="logo-accent">◆</span>
-            <span>NAATAL</span>
-          </motion.div>
-        </div>
+        <motion.div
+          className="logo"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <img src="/img/logo.png" alt="NAATAL Logo" className="logo-image" />
+        </motion.div>
 
         <nav className={`nav ${isOpen ? 'open' : ''}`}>
           {menuItems.map((item, index) => (
