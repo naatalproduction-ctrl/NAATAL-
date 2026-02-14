@@ -1,0 +1,39 @@
+# Build
+dist
+
+# Dependencies
+node_modules
+package-lock.json
+
+# System
+.DS_Store
+*.local
+
+# Env
+.env
+
+# Large media files
+Video/
+public/videos/
+backup_20260205_190554/
+
+# Session files
+session-*.md
+
+# Docs generated
+BOUTIQUE_PRIVEE_SUMMARY.md
+BOUTIQUE_SUPPRIMEE.md
+CINEMA_ACCES_PRIVE_SUMMARY.md
+CONTACT_QUICK_START.md
+DIAGNOSTIC.md
+EXTRAITS_DRONE.md
+FORM_CONFIG.md
+INSTALLATION.md
+UPDATE_SUMMARY.md
+VIDEOS_NOT_DISPLAYING.md
+VIDEOS_SOLUTION.md
+VIDEOS_SUMMARY.md
+
+# Scripts
+create_short_clips.sh
+extract_drone_clips.sh

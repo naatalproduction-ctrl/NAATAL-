@@ -1,0 +1,38 @@
+{
+  "goal": "Restaurer l'accès à la section Boutique",
+  "status": "in_progress",
+  "tasks": [
+    {
+      "id": 1,
+      "description": "Vérifier l'état actuel du composant Boutique",
+      "action": "Vérifier que Boutique.jsx et Boutique.css existent toujours"
+    },
+    {
+      "id": 2,
+      "description": "Vérifier que la route /boutique existe dans App.jsx",
+      "action": "Confirmer que Route path='/boutique' est présent"
+    },
+    {
+      "id": 3,
+      "description": "Vérifier que les liens cachés existent dans Header",
+      "action": "Vérifier que hidden-links contient le lien /boutique"
+    },
+    {
+      "id": 4,
+      "description": "Vérifier l'état de index.html",
+      "action": "Confirmer que script src pointe vers src/main.jsx"
+    },
+    {
+      "id": 5,
+      "description": "Diagnostiquer pourquoi la page /boutique ne s'affiche pas",
+      "action": "Vérifier console du navigateur et logs du serveur"
+    },
+    {
+      "id": 6,
+      "description": "Restaurer l'accès à la section Boutique",
+      "action": "S'assurer que la route /boutique fonctionne correctement"
+    }
+  ]
+}
+  ]
+}
