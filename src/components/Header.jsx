@@ -12,8 +12,8 @@ export default function Header() {
   const menuItems = [
     { label: 'Accueil', href: '#hero' },
     { label: 'Audiovisuel', href: '#audiovisuel' },
-    { label: 'Boutique', href: '/boutique', isRoute: true },
     { label: 'Cinéma', href: '/cinema', isRoute: true },
+    { label: 'Boutique', href: '/boutique', isRoute: true },
     { label: 'Contact', href: '#contact' }
   ]
 
