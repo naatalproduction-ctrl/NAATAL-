@@ -28,7 +28,7 @@ const getAttachments = async (req, res) => {
     res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Erreur getAttachments:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -56,7 +56,7 @@ const uploadAttachment = async (req, res) => {
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Erreur uploadAttachment:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -85,7 +85,7 @@ const deleteAttachment = async (req, res) => {
     res.json({ success: true, message: 'Fichier supprimé' });
   } catch (error) {
     console.error('Erreur deleteAttachment:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -106,10 +106,16 @@ const downloadAttachment = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Fichier introuvable sur le serveur' });
     }
     
+    // Path traversal protection
+    const uploadsDir = path.resolve(path.join(__dirname, '..', 'uploads'));
+    const resolved = path.resolve(attachment.file_path);
+    if (!resolved.startsWith(uploadsDir)) {
+      return res.status(400).json({ success: false, error: 'Chemin de fichier invalide' });
+    }
+
     res.download(attachment.file_path, attachment.original_name);
   } catch (error) {
-    console.error('Erreur downloadAttachment:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur lors du téléchargement' });
   }
 };
 

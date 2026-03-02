@@ -15,7 +15,7 @@ const getAllMedias = async (req, res) => {
     `);
     res.json({ success: true, data: result.rows });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -32,7 +32,7 @@ const getMediasByCategory = async (req, res) => {
     `, [categorySlug]);
     res.json({ success: true, data: result.rows });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -52,7 +52,7 @@ const getMediaById = async (req, res) => {
     }
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -69,7 +69,7 @@ const createMedia = async (req, res) => {
     
     res.status(201).json({ success: true, data: result.rows[0], message: 'Média créé avec succès' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -99,7 +99,7 @@ const updateMedia = async (req, res) => {
     }
     res.json({ success: true, data: result.rows[0], message: 'Média mis à jour' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -114,7 +114,7 @@ const deleteMedia = async (req, res) => {
     }
     res.json({ success: true, message: 'Média supprimé' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -130,7 +130,7 @@ const getAllCategories = async (req, res) => {
     `);
     res.json({ success: true, data: result.rows });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -156,7 +156,7 @@ const getMediasGroupedByCategory = async (req, res) => {
     
     res.json({ success: true, data: grouped });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 

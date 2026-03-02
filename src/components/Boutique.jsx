@@ -106,13 +106,13 @@ export default function Boutique() {
                 style={{ backgroundColor: product.color || 'rgba(255, 255, 255, 0.05)' }}
               >
                 <div className="product-image">
-                  {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
+                  {product.image_url && !product._imgError ? (
+                    <img
+                      src={product.image_url}
                       alt={product.name}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentNode.innerHTML = `<div class="product-placeholder"><span class="product-name">${product.name}</span></div>`;
+                      onError={() => {
+                        product._imgError = true;
+                        setProducts(prev => [...prev]);
                       }}
                     />
                   ) : (

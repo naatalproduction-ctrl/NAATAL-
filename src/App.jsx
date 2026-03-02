@@ -6,6 +6,7 @@ import Hero from './components/Hero'
 import Audiovisuel from './components/Audiovisuel'
 import Cinema from './components/Cinema'
 import Boutique from './components/Boutique'
+import Partners from './components/Partners'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
 import Admin from './components/Admin'
@@ -72,6 +73,7 @@ function AppContent() {
           <>
             <Hero />
             <Audiovisuel />
+            <Partners />
             <Contact />
           </>
         } />

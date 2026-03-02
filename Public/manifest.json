@@ -1,0 +1,27 @@
+{
+  "name": "NAATAL - Production Audiovisuelle",
+  "short_name": "NAATAL",
+  "description": "Maison de production audiovisuelle et cinematographique basee a Abidjan, Cote d'Ivoire.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

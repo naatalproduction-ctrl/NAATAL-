@@ -4248,3 +4248,179 @@
   border-radius: 16px;
   margin: -20px 0 0;
 }
+
+/* ========================================
+   PARTNERS ADMIN SECTION
+   ======================================== */
+.partners-admin-section .section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.partners-admin-section .section-header h2 {
+  margin: 0;
+  flex: 1;
+}
+
+.partners-admin-section .section-header p {
+  width: 100%;
+  order: 3;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+}
+
+.partners-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.partner-admin-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.3s ease;
+}
+
+.partner-admin-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.partner-card-logo {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.partner-card-logo img {
+  max-width: 60px;
+  max-height: 60px;
+  object-fit: contain;
+}
+
+.partner-no-logo {
+  width: 32px;
+  height: 32px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.partner-no-logo svg {
+  width: 100%;
+  height: 100%;
+}
+
+.partner-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.partner-card-info h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.partner-url {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.partner-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.partner-order {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.partner-card-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+}
+
+.partner-card-actions .btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.partner-card-actions .btn-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.partner-card-actions .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.partner-card-actions .btn-icon.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.partner-logo-preview {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.partner-logo-preview img {
+  max-height: 60px;
+  max-width: 200px;
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .partners-admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .partners-admin-section .section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

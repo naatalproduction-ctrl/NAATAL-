@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import html2canvas from 'html2canvas';
@@ -21,6 +21,9 @@ const ELEMENT_TYPES = {
   ARROW: 'arrow',
   ARC: 'arc',
 };
+
+// Infinite canvas — no fixed bounds
+const clampBounds = (x, y) => ({ x, y });
 
 // Sticky note colors
 const STICKY_COLORS = [
@@ -45,17 +48,81 @@ const SHAPES = ['rectangle', 'circle', 'diamond'];
 // Connector types (line, arrow, arc)
 const CONNECTOR_TYPES = ['line', 'arrow', 'arc'];
 
+// Snap threshold in canvas pixels
+const SNAP_THRESHOLD = 20;
+
+// Get anchor points for an element (top, right, bottom, left, center)
+const getAnchorPoints = (el) => {
+  const isConnector = el.type === ELEMENT_TYPES.LINE ||
+    el.type === ELEMENT_TYPES.ARROW || el.type === ELEMENT_TYPES.ARC;
+  if (isConnector) return [];
+
+  const cx = el.x + el.width / 2;
+  const cy = el.y + (el.height || 100) / 2;
+  const w = el.width;
+  const h = el.height || 100;
+
+  return [
+    { id: el.id, anchor: 'top',    x: cx,          y: el.y },
+    { id: el.id, anchor: 'right',  x: el.x + w,    y: cy },
+    { id: el.id, anchor: 'bottom', x: cx,          y: el.y + h },
+    { id: el.id, anchor: 'left',   x: el.x,        y: cy },
+    { id: el.id, anchor: 'center', x: cx,          y: cy },
+  ];
+};
+
+// Find the nearest anchor point within threshold
+const findNearestAnchor = (x, y, elements, threshold = SNAP_THRESHOLD) => {
+  let best = null;
+  let bestDist = threshold;
+  for (const el of elements) {
+    const anchors = getAnchorPoints(el);
+    for (const anchor of anchors) {
+      const dx = anchor.x - x;
+      const dy = anchor.y - y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = anchor;
+      }
+    }
+  }
+  return best;
+};
+
+// Get anchor position from element and anchor name
+const getAnchorPosition = (el, anchorName) => {
+  if (!el || !anchorName) return null;
+  const cx = el.x + el.width / 2;
+  const cy = el.y + (el.height || 100) / 2;
+  switch (anchorName) {
+    case 'top':    return { x: cx, y: el.y };
+    case 'right':  return { x: el.x + el.width, y: cy };
+    case 'bottom': return { x: cx, y: el.y + (el.height || 100) };
+    case 'left':   return { x: el.x, y: cy };
+    case 'center': return { x: cx, y: cy };
+    default: return null;
+  }
+};
+
 // Convert DB element to canvas element
-const dbToCanvas = (dbEl) => ({
-  id: `db-${dbEl.id}`,
-  type: dbEl.element_type,
-  x: parseFloat(dbEl.pos_x) || 0,
-  y: parseFloat(dbEl.pos_y) || 0,
-  width: parseFloat(dbEl.width) || 200,
-  height: parseFloat(dbEl.height) || 200,
-  content: dbEl.content || '',
-  ...(dbEl.properties || {}),
-});
+const dbToCanvas = (dbEl) => {
+  let props = dbEl.properties || {};
+  // Handle case where properties is returned as a JSON string
+  if (typeof props === 'string') {
+    try { props = JSON.parse(props); } catch { props = {}; }
+  }
+  return {
+    id: `db-${dbEl.id}`,
+    type: dbEl.element_type,
+    x: parseFloat(dbEl.pos_x) || 0,
+    y: parseFloat(dbEl.pos_y) || 0,
+    width: parseFloat(dbEl.width) || 200,
+    height: parseFloat(dbEl.height) || 200,
+    content: dbEl.content || '',
+    ...props,
+  };
+};
 
 // ============================================
 // BOARD GALLERY VIEW (Freeform-style)
@@ -352,15 +419,24 @@ function BoardGallery({ onOpenBoard, embedded = false }) {
                   style={{ '--board-color': board.color || '#007aff' }}
                 >
                   <div className="sb-board-preview-inner">
-                    <div className="sb-board-dots">
-                      {Array.from({ length: 9 }).map((_, i) => (
-                        <div key={i} className="sb-board-dot" style={{
-                          opacity: Math.random() * 0.5 + 0.2,
-                          width: Math.random() * 8 + 4,
-                          height: Math.random() * 8 + 4,
-                        }} />
-                      ))}
-                    </div>
+                    {board.thumbnail ? (
+                      <img
+                        src={board.thumbnail}
+                        alt={board.title}
+                        className="sb-board-thumbnail"
+                        draggable={false}
+                      />
+                    ) : (
+                      <div className="sb-board-dots">
+                        {Array.from({ length: 9 }).map((_, i) => (
+                          <div key={i} className="sb-board-dot" style={{
+                            opacity: Math.random() * 0.5 + 0.2,
+                            width: Math.random() * 8 + 4,
+                            height: Math.random() * 8 + 4,
+                          }} />
+                        ))}
+                      </div>
+                    )}
                     {board.element_count > 0 && (
                       <span className="sb-board-element-count">
                         {board.element_count} element{board.element_count > 1 ? 's' : ''}
@@ -580,7 +656,7 @@ function BoardGallery({ onOpenBoard, embedded = false }) {
 // ============================================
 // BOARD EDITOR (Canvas)
 // ============================================
-function BoardEditor({ boardId, onBack, embedded = false }) {
+function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
   const [boardTitle, setBoardTitle] = useState('');
   const [elements, setElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -590,6 +666,8 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [isSpaceHeld, setIsSpaceHeld] = useState(false);
+  const isSpaceHeldRef = useRef(false);
   const [dragInfo, setDragInfo] = useState(null);
   const [resizeInfo, setResizeInfo] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -622,11 +700,59 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
   const canvasRef = useRef(null);
   const wrapperRef = useRef(null);
   const fileInputRef = useRef(null);
+  const [wrapperSize, setWrapperSize] = useState({ width: 0, height: 0 });
+  const scrollbarDragRef = useRef(null); // { axis: 'x'|'y', startMouse, startPan }
   const saveTimeoutRef = useRef(null);
   const elementsRef = useRef(elements);
+  const zoomRef = useRef(zoom);
+  const panOffsetRef = useRef(panOffset);
+  const boardIdRef = useRef(boardId);
 
   // Keep refs in sync with state
   useEffect(() => { elementsRef.current = elements; }, [elements]);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => { panOffsetRef.current = panOffset; }, [panOffset]);
+  useEffect(() => { boardIdRef.current = boardId; }, [boardId]);
+
+  // Track wrapper dimensions for scrollbar calculations
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setWrapperSize({ width: entry.contentRect.width, height: entry.contentRect.height });
+      }
+    });
+    ro.observe(wrapper);
+    // Initial measurement
+    const rect = wrapper.getBoundingClientRect();
+    setWrapperSize({ width: rect.width, height: rect.height });
+    return () => ro.disconnect();
+  }, []);
+
+  // Dynamic canvas bounds — grows when elements reach edges
+  const canvasBounds = useMemo(() => {
+    const EDGE_PADDING = 300;
+    const MIN_W = 5000;
+    const MIN_H = 5000;
+
+    if (elements.length === 0) {
+      return { width: MIN_W, height: MIN_H };
+    }
+
+    let maxX = 0, maxY = 0;
+    elements.forEach(el => {
+      const right = (el.x || 0) + (el.width || 150);
+      const bottom = (el.y || 0) + (el.height || 50);
+      if (right > maxX) maxX = right;
+      if (bottom > maxY) maxY = bottom;
+    });
+
+    return {
+      width: Math.max(MIN_W, maxX + EDGE_PADDING),
+      height: Math.max(MIN_H, maxY + EDGE_PADDING),
+    };
+  }, [elements]);
 
   // Close attach menu on click outside
   useEffect(() => {
@@ -674,6 +800,39 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
     };
   }, [contextMenu]);
 
+  // Generate a small thumbnail of the canvas viewport for gallery preview
+  const thumbnailTimeoutRef = useRef(null);
+  const generateThumbnailRef = useRef(null);
+  const generateThumbnail = useCallback(async () => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper || !boardId) return;
+    try {
+      const rect = wrapper.getBoundingClientRect();
+      const captured = await html2canvas(wrapper, {
+        backgroundColor: '#ffffff',
+        scale: 0.25,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: rect.width,
+        height: rect.height,
+        x: 0,
+        y: 0,
+        ignoreElements: (el) => {
+          return el.classList?.contains('sb-resize-handle') ||
+                 el.classList?.contains('sb-selection-box');
+        },
+      });
+      const dataUrl = captured.toDataURL('image/jpeg', 0.5);
+      await storyboardAPI.update(boardId, { thumbnail: dataUrl });
+    } catch (err) {
+      console.error('Erreur génération thumbnail:', err);
+    }
+  }, [boardId]);
+
+  // Keep ref in sync
+  useEffect(() => { generateThumbnailRef.current = generateThumbnail; }, [generateThumbnail]);
+
   // Load board data
   useEffect(() => {
     const loadBoard = async () => {
@@ -691,6 +850,38 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
 
           if (board.elements && board.elements.length > 0) {
             const canvasElements = board.elements.map(dbToCanvas);
+            // Remap sourceId/targetId to match loaded element IDs (db-X format)
+            for (const el of canvasElements) {
+              if (el.sourceId != null) {
+                // sourceId could be: numeric (42), string "42", or already "db-42"
+                const sid = String(el.sourceId);
+                if (sid.startsWith('db-')) {
+                  // Already in db-X format, check if element exists
+                  if (canvasElements.some(e => e.id === sid)) {
+                    el.sourceId = sid;
+                  }
+                } else {
+                  // Numeric ID from DB, convert to db-X
+                  const remapped = `db-${sid}`;
+                  if (canvasElements.some(e => e.id === remapped)) {
+                    el.sourceId = remapped;
+                  }
+                }
+              }
+              if (el.targetId != null) {
+                const tid = String(el.targetId);
+                if (tid.startsWith('db-')) {
+                  if (canvasElements.some(e => e.id === tid)) {
+                    el.targetId = tid;
+                  }
+                } else {
+                  const remapped = `db-${tid}`;
+                  if (canvasElements.some(e => e.id === remapped)) {
+                    el.targetId = remapped;
+                  }
+                }
+              }
+            }
             setElements(canvasElements);
             setHistory([canvasElements]);
           }
@@ -704,6 +895,18 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
 
     loadBoard();
   }, [boardId]);
+
+  // Générer la thumbnail une fois le board chargé et les éléments rendus
+  useEffect(() => {
+    if (!loadingBoard && boardId) {
+      const timer = setTimeout(() => {
+        if (generateThumbnailRef.current) {
+          generateThumbnailRef.current();
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loadingBoard, boardId]);
 
   // Auto-save
   const autoSave = useCallback(async (currentElements, currentZoom, currentPan) => {
@@ -721,13 +924,21 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
           pan_y: currentPan.y,
         });
         setLastSaved(new Date());
+
+        // Generate thumbnail with a longer debounce (avoid too frequent captures)
+        if (thumbnailTimeoutRef.current) {
+          clearTimeout(thumbnailTimeoutRef.current);
+        }
+        thumbnailTimeoutRef.current = setTimeout(() => {
+          generateThumbnail();
+        }, 2000);
       } catch (err) {
         console.error('Erreur sauvegarde:', err);
       } finally {
         setSaving(false);
       }
     }, 1500);
-  }, [boardId]);
+  }, [boardId, generateThumbnail]);
 
   // Save to history
   const pushHistory = useCallback((newElements) => {
@@ -760,10 +971,28 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
 
   // Keyboard shortcuts - moved after function definitions (see below duplicateElement)
 
-  // Cleanup auto-save timeout
+  // Save immediately on unmount (don't lose pending changes)
   useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      if (thumbnailTimeoutRef.current) {
+        clearTimeout(thumbnailTimeoutRef.current);
+      }
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        // Save immediately instead of discarding
+        const currentElements = elementsRef.current;
+        const currentZoom = zoomRef.current;
+        const currentPan = panOffsetRef.current;
+        const currentBoardId = boardIdRef.current;
+        if (currentElements && currentElements.length > 0 && currentBoardId) {
+          storyboardAPI.saveElements(currentBoardId, {
+            elements: currentElements,
+            zoom: currentZoom,
+            pan_x: currentPan.x,
+            pan_y: currentPan.y,
+          }).catch(err => console.error('Erreur sauvegarde au démontage:', err));
+        }
+      }
     };
   }, []);
 
@@ -827,7 +1056,7 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
   }, [elements, pushHistory, shapeType]);
 
   // Finalize connector (line/arrow/arc) after draw
-  const finalizeConnector = useCallback((type, x1, y1, x2, y2) => {
+  const finalizeConnector = useCallback((type, x1, y1, x2, y2, sourceSnap, targetSnap) => {
     const dx = x2 - x1, dy = y2 - y1;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < 5) return; // too small
@@ -868,6 +1097,9 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
       ...(type === 'arc' ? { cx, cy } : {}),
       strokeColor: '#1d1d1f',
       strokeWidth: 2,
+      // Connection data
+      ...(sourceSnap ? { sourceId: sourceSnap.id, sourceAnchor: sourceSnap.anchor } : {}),
+      ...(targetSnap ? { targetId: targetSnap.id, targetAnchor: targetSnap.anchor } : {}),
     };
     const newElements = [...elements, newElement];
     setElements(newElements);
@@ -1136,6 +1368,14 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
         setEditingId(null);
         setTool('select');
       }
+      // Space = pan mode (Figma-style)
+      if (e.key === ' ' && !editingId) {
+        e.preventDefault();
+        if (!isSpaceHeldRef.current) {
+          setIsSpaceHeld(true);
+          isSpaceHeldRef.current = true;
+        }
+      }
       // Tool shortcuts (only when no modifier keys)
       if (!e.metaKey && !e.ctrlKey && !e.altKey && !editingId) {
         if (e.key === 'v' || e.key === 'V') { setTool('select'); }
@@ -1145,8 +1385,19 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
         if (e.key === 'l' || e.key === 'L') { setTool('link'); }
       }
     };
+    const handleKeyUp = (e) => {
+      if (e.key === ' ') {
+        setIsSpaceHeld(false);
+        isSpaceHeldRef.current = false;
+        setIsPanning(false);
+      }
+    };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [selectedId, selectedIds, editingId, undo, redo, elements, zoom, panOffset, autoSave, copyElement, cutElement, pasteElement, duplicateElement, deleteElement]);
 
   // Toggle lock element
@@ -1192,6 +1443,14 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
 
   // Drag element
   const handleElementMouseDown = useCallback((e, id) => {
+    // Space+click = pan (override element drag)
+    if (isSpaceHeldRef.current && e.button === 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsPanning(true);
+      setPanStart({ x: e.clientX, y: e.clientY });
+      return;
+    }
     if (editingId === id) return;
     e.stopPropagation();
     const el = elements.find(item => item.id === id);
@@ -1232,6 +1491,38 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
     setSelectedIds(new Set());
     bringToFront(id);
 
+    // If dragging a connector, include connected elements in a group drag
+    const isConnector = el.type === ELEMENT_TYPES.LINE ||
+      el.type === ELEMENT_TYPES.ARROW || el.type === ELEMENT_TYPES.ARC;
+    if (isConnector && (el.sourceId || el.targetId)) {
+      const groupOffsets = {};
+      groupOffsets[id] = { dx: x - el.x, dy: y - el.y };
+      if (el.sourceId) {
+        const srcEl = elements.find(item => item.id === el.sourceId);
+        if (srcEl) groupOffsets[el.sourceId] = { dx: x - srcEl.x, dy: y - srcEl.y };
+      }
+      if (el.targetId) {
+        const tgtEl = elements.find(item => item.id === el.targetId);
+        if (tgtEl) groupOffsets[el.targetId] = { dx: x - tgtEl.x, dy: y - tgtEl.y };
+      }
+      // Also include any other connectors attached to those elements
+      elements.forEach(item => {
+        const isConn = item.type === ELEMENT_TYPES.LINE ||
+          item.type === ELEMENT_TYPES.ARROW || item.type === ELEMENT_TYPES.ARC;
+        if (isConn && item.id !== id) {
+          const srcLinked = item.sourceId && groupOffsets[item.sourceId];
+          const tgtLinked = item.targetId && groupOffsets[item.targetId];
+          if (srcLinked || tgtLinked) {
+            if (!groupOffsets[item.id]) {
+              groupOffsets[item.id] = { dx: x - item.x, dy: y - item.y };
+            }
+          }
+        }
+      });
+      setDragInfo({ id, startX: x - el.x, startY: y - el.y, groupOffsets });
+      return;
+    }
+
     setDragInfo({ id, startX: x - el.x, startY: y - el.y, groupOffsets: null });
   }, [elements, editingId, selectedId, selectedIds, getCanvasCoords, bringToFront]);
 
@@ -1249,6 +1540,76 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
     });
   }, [elements, getCanvasCoords]);
 
+  // Update connectors that are connected to any moved element
+  const updateConnectedConnectors = useCallback((allElements, movedIds) => {
+    return allElements.map(el => {
+      const isConn = el.type === ELEMENT_TYPES.LINE ||
+        el.type === ELEMENT_TYPES.ARROW || el.type === ELEMENT_TYPES.ARC;
+      if (!isConn) return el;
+
+      let sourcePos = null;
+      let targetPos = null;
+
+      // Get absolute positions of connected endpoints
+      if (el.sourceId && movedIds.has(el.sourceId)) {
+        const sourceEl = allElements.find(e => e.id === el.sourceId);
+        if (sourceEl) {
+          sourcePos = getAnchorPosition(sourceEl, el.sourceAnchor);
+        }
+      }
+      if (el.targetId && movedIds.has(el.targetId)) {
+        const targetEl = allElements.find(e => e.id === el.targetId);
+        if (targetEl) {
+          targetPos = getAnchorPosition(targetEl, el.targetAnchor);
+        }
+      }
+
+      if (!sourcePos && !targetPos) return el;
+
+      // Compute current absolute positions of both endpoints
+      const absX1 = sourcePos ? sourcePos.x : (el.x + el.x1);
+      const absY1 = sourcePos ? sourcePos.y : (el.y + el.y1);
+      const absX2 = targetPos ? targetPos.x : (el.x + el.x2);
+      const absY2 = targetPos ? targetPos.y : (el.y + el.y2);
+
+      // Recompute bounding box
+      const padding = 20;
+      const minX = Math.min(absX1, absX2);
+      const minY = Math.min(absY1, absY2);
+      const w = Math.abs(absX2 - absX1);
+      const h = Math.abs(absY2 - absY1);
+
+      const newX = minX - padding;
+      const newY = minY - padding;
+      const newW = w + padding * 2;
+      const newH = h + padding * 2;
+
+      // Recompute local coords
+      const lx1 = absX1 - newX;
+      const ly1 = absY1 - newY;
+      const lx2 = absX2 - newX;
+      const ly2 = absY2 - newY;
+
+      // Recompute control point for arcs (keep relative position)
+      let newCx = el.cx;
+      let newCy = el.cy;
+      if (el.type === ELEMENT_TYPES.ARC && el.cx != null) {
+        // Convert old control point to absolute, then back to new local
+        const absCx = el.x + el.cx;
+        const absCy = el.y + el.cy;
+        newCx = absCx - newX;
+        newCy = absCy - newY;
+      }
+
+      return {
+        ...el,
+        x: newX, y: newY, width: newW, height: newH,
+        x1: lx1, y1: ly1, x2: lx2, y2: ly2,
+        ...(el.type === ELEMENT_TYPES.ARC ? { cx: newCx, cy: newCy } : {}),
+      };
+    });
+  }, []);
+
   // Mouse move handler
   const handleMouseMove = useCallback((e) => {
     if (isPanning) {
@@ -1262,8 +1623,18 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
     // Drawing connector preview
     if (drawInfoRef.current) {
       const { x, y } = getCanvasCoords(e.clientX, e.clientY);
-      setDrawInfo(prev => ({ ...prev, currentX: x, currentY: y }));
-      drawInfoRef.current = { ...drawInfoRef.current, currentX: x, currentY: y };
+      // Snap to nearest anchor point
+      const snap = findNearestAnchor(x, y, elementsRef.current);
+      const snapX = snap ? snap.x : x;
+      const snapY = snap ? snap.y : y;
+      const updated = {
+        ...drawInfoRef.current,
+        currentX: snapX,
+        currentY: snapY,
+        snapTarget: snap || null,
+      };
+      setDrawInfo(updated);
+      drawInfoRef.current = updated;
       return;
     }
 
@@ -1276,15 +1647,18 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
       return;
     }
 
-    // Dragging a control point (arc)
+    // Dragging a control point (arc) -- mouse position = desired curve midpoint (t=0.5)
+    // Convert to actual control point: cp = 2*mid - 0.5*p1 - 0.5*p2
     if (controlPointDragRef.current) {
       const { x, y } = getCanvasCoords(e.clientX, e.clientY);
       const el = elementsRef.current.find(item => item.id === controlPointDragRef.current.id);
       if (el) {
-        const localX = x - el.x;
-        const localY = y - el.y;
+        const midLocalX = x - el.x;
+        const midLocalY = y - el.y;
+        const cpX = 2 * midLocalX - 0.5 * el.x1 - 0.5 * el.x2;
+        const cpY = 2 * midLocalY - 0.5 * el.y1 - 0.5 * el.y2;
         setElements(prev => prev.map(item =>
-          item.id === controlPointDragRef.current.id ? { ...item, cx: localX, cy: localY } : item
+          item.id === controlPointDragRef.current.id ? { ...item, cx: cpX, cy: cpY } : item
         ));
       }
       return;
@@ -1293,18 +1667,36 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
     if (dragInfo) {
       const { x, y } = getCanvasCoords(e.clientX, e.clientY);
       if (dragInfo.groupOffsets) {
-        // Group drag: move all selected elements
-        setElements(prev => prev.map(el => {
-          const offset = dragInfo.groupOffsets[el.id];
-          if (offset) return { ...el, x: x - offset.dx, y: y - offset.dy };
-          return el;
-        }));
+        // Group drag: move all selected elements + update connected connectors
+        setElements(prev => {
+          const movedIds = new Set(Object.keys(dragInfo.groupOffsets));
+          let updated = prev.map(el => {
+            const offset = dragInfo.groupOffsets[el.id];
+            if (offset) {
+              const rawX = x - offset.dx;
+              const rawY = y - offset.dy;
+              const clamped = clampBounds(rawX, rawY, el.width || 0, el.height || 0);
+              return { ...el, x: clamped.x, y: clamped.y };
+            }
+            return el;
+          });
+          // Update connectors connected to any moved element
+          updated = updateConnectedConnectors(updated, movedIds);
+          return updated;
+        });
       } else {
-        setElements(prev => prev.map(el =>
-          el.id === dragInfo.id
-            ? { ...el, x: x - dragInfo.startX, y: y - dragInfo.startY }
-            : el
-        ));
+        setElements(prev => {
+          let updated = prev.map(el => {
+            if (el.id !== dragInfo.id) return el;
+            const rawX = x - dragInfo.startX;
+            const rawY = y - dragInfo.startY;
+            const clamped = clampBounds(rawX, rawY, el.width || 0, el.height || 0);
+            return { ...el, x: clamped.x, y: clamped.y };
+          });
+          // Update connectors connected to the moved element
+          updated = updateConnectedConnectors(updated, new Set([dragInfo.id]));
+          return updated;
+        });
       }
       return;
     }
@@ -1314,16 +1706,27 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
       const dx = x - resizeInfo.startX;
       const dy = y - resizeInfo.startY;
 
-      // Handle connector endpoint dragging
+      // Handle connector endpoint dragging with snap
       if (resizeInfo.handle === 'p1' || resizeInfo.handle === 'p2') {
+        const snap = findNearestAnchor(x, y, elementsRef.current);
+        const snapX = snap ? snap.x : x;
+        const snapY = snap ? snap.y : y;
         setElements(prev => prev.map(el => {
           if (el.id !== resizeInfo.id) return el;
-          const localX = x - el.x;
-          const localY = y - el.y;
+          const localX = snapX - el.x;
+          const localY = snapY - el.y;
           if (resizeInfo.handle === 'p1') {
-            return { ...el, x1: localX, y1: localY };
+            return {
+              ...el, x1: localX, y1: localY,
+              sourceId: snap ? snap.id : undefined,
+              sourceAnchor: snap ? snap.anchor : undefined,
+            };
           } else {
-            return { ...el, x2: localX, y2: localY };
+            return {
+              ...el, x2: localX, y2: localY,
+              targetId: snap ? snap.id : undefined,
+              targetAnchor: snap ? snap.anchor : undefined,
+            };
           }
         }));
         return;
@@ -1417,7 +1820,8 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
 
     // Finalize connector drawing
     if (drawInfoRef.current) {
-      finalizeConnector(drawInfoRef.current.type, drawInfoRef.current.startX, drawInfoRef.current.startY, drawInfoRef.current.currentX, drawInfoRef.current.currentY);
+      const d = drawInfoRef.current;
+      finalizeConnector(d.type, d.startX, d.startY, d.currentX, d.currentY, d.sourceSnap, d.snapTarget);
       setDrawInfo(null);
       drawInfoRef.current = null;
       return;
@@ -1443,9 +1847,9 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
     setIsPanning(false);
   }, [dragInfo, resizeInfo, elements, pushHistory, finalizeConnector]);
 
-  // Pan with middle click or alt+click, or start drawing connectors
+  // Pan with middle click, alt+click, or space+click, or start drawing connectors
   const handleCanvasMouseDown = useCallback((e) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    if (e.button === 1 || (e.button === 0 && e.altKey) || (e.button === 0 && isSpaceHeldRef.current)) {
       e.preventDefault();
       setIsPanning(true);
       setPanStart({ x: e.clientX, y: e.clientY });
@@ -1455,7 +1859,17 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
     // Start drawing connector (line/arrow/arc)
     if (e.button === 0 && (tool === 'line' || tool === 'arrow' || tool === 'arc')) {
       const { x, y } = getCanvasCoords(e.clientX, e.clientY);
-      const info = { type: tool === 'line' ? ELEMENT_TYPES.LINE : tool === 'arrow' ? ELEMENT_TYPES.ARROW : ELEMENT_TYPES.ARC, startX: x, startY: y, currentX: x, currentY: y };
+      // Snap start to nearest anchor (use ref for fresh elements)
+      const snap = findNearestAnchor(x, y, elementsRef.current);
+      const snapX = snap ? snap.x : x;
+      const snapY = snap ? snap.y : y;
+      const info = {
+        type: tool === 'line' ? ELEMENT_TYPES.LINE : tool === 'arrow' ? ELEMENT_TYPES.ARROW : ELEMENT_TYPES.ARC,
+        startX: snapX, startY: snapY,
+        currentX: snapX, currentY: snapY,
+        sourceSnap: snap || null,
+        snapTarget: null,
+      };
       setDrawInfo(info);
       drawInfoRef.current = info;
       setSelectedId(null);
@@ -1542,6 +1956,107 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
     e.dataTransfer.dropEffect = 'copy';
   }, []);
 
+  // ---- Custom scrollbar logic ----
+  const scrollbarInfo = useMemo(() => {
+    const vw = wrapperSize.width;
+    const vh = wrapperSize.height;
+    if (!vw || !vh) return null;
+
+    const cw = canvasBounds.width * zoom;
+    const ch = canvasBounds.height * zoom;
+
+    // The visible area in canvas-pixel space
+    // panOffset is how much the canvas origin is shifted (positive = canvas moved right/down)
+    // Total scrollable range: from showing left edge to showing right edge
+    const totalW = cw + vw; // full scroll range horizontally
+    const totalH = ch + vh; // full scroll range vertically
+
+    // Current scroll position (0..1): how far we are from the leftmost/topmost position
+    const scrollX = (vw - panOffset.x) / totalW;
+    const scrollY = (vh - panOffset.y) / totalH;
+
+    // Thumb size ratio
+    const thumbRatioX = vw / totalW;
+    const thumbRatioY = vh / totalH;
+
+    const SCROLLBAR_MARGIN = 4;
+    const MIN_THUMB = 30;
+    const TRACK_SIZE = 8;
+
+    // Horizontal scrollbar
+    const hTrackLen = vw - SCROLLBAR_MARGIN * 2 - TRACK_SIZE; // leave room for corner
+    const hThumbLen = Math.max(MIN_THUMB, thumbRatioX * hTrackLen);
+    const hThumbPos = SCROLLBAR_MARGIN + scrollX * (hTrackLen - hThumbLen);
+
+    // Vertical scrollbar
+    const vTrackLen = vh - SCROLLBAR_MARGIN * 2 - TRACK_SIZE; // leave room for corner
+    const vThumbLen = Math.max(MIN_THUMB, thumbRatioY * vTrackLen);
+    const vThumbPos = SCROLLBAR_MARGIN + scrollY * (vTrackLen - vThumbLen);
+
+    return {
+      hThumbPos, hThumbLen, hTrackLen,
+      vThumbPos, vThumbLen, vTrackLen,
+      totalW, totalH,
+      SCROLLBAR_MARGIN, TRACK_SIZE,
+      showH: thumbRatioX < 0.98,
+      showV: thumbRatioY < 0.98,
+    };
+  }, [wrapperSize, canvasBounds, zoom, panOffset]);
+
+  const handleScrollbarMouseDown = useCallback((axis, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    scrollbarDragRef.current = {
+      axis,
+      startMouse: axis === 'x' ? e.clientX : e.clientY,
+      startPan: axis === 'x' ? panOffset.x : panOffset.y,
+    };
+
+    const handleMove = (ev) => {
+      const info = scrollbarDragRef.current;
+      if (!info) return;
+      const delta = (info.axis === 'x' ? ev.clientX : ev.clientY) - info.startMouse;
+
+      const vw = wrapperSize.width;
+      const vh = wrapperSize.height;
+      const cw = canvasBounds.width * zoomRef.current;
+      const ch = canvasBounds.height * zoomRef.current;
+      const SCROLLBAR_MARGIN = 4;
+      const TRACK_SIZE = 8;
+
+      if (info.axis === 'x') {
+        const totalW = cw + vw;
+        const hTrackLen = vw - SCROLLBAR_MARGIN * 2 - TRACK_SIZE;
+        const thumbRatioX = vw / totalW;
+        const hThumbLen = Math.max(30, thumbRatioX * hTrackLen);
+        const scrollableTrack = hTrackLen - hThumbLen;
+        if (scrollableTrack <= 0) return;
+        const panDelta = (delta / scrollableTrack) * totalW;
+        const newPanX = info.startPan - panDelta;
+        setPanOffset(prev => ({ ...prev, x: newPanX }));
+      } else {
+        const totalH = ch + vh;
+        const vTrackLen = vh - SCROLLBAR_MARGIN * 2 - TRACK_SIZE;
+        const thumbRatioY = vh / totalH;
+        const vThumbLen = Math.max(30, thumbRatioY * vTrackLen);
+        const scrollableTrack = vTrackLen - vThumbLen;
+        if (scrollableTrack <= 0) return;
+        const panDelta = (delta / scrollableTrack) * totalH;
+        const newPanY = info.startPan - panDelta;
+        setPanOffset(prev => ({ ...prev, y: newPanY }));
+      }
+    };
+
+    const handleUp = () => {
+      scrollbarDragRef.current = null;
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+  }, [panOffset, wrapperSize, canvasBounds]);
+
   // File input handler
   const handleFileSelect = useCallback((e) => {
     const files = Array.from(e.target.files);
@@ -1551,40 +2066,131 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
     e.target.value = '';
   }, [addImage]);
 
-  // Export as PDF
+  // Export as PDF — clone elements into a temp container sized to bounding box
   const exportBoard = async () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (elements.length === 0) return;
 
     // Temporarily hide selection UI for clean export
     const prevSelected = selectedId;
+    const prevSelectedIds = new Set(selectedIds);
     setSelectedId(null);
+    setSelectedIds(new Set());
 
-    // Wait for re-render
-    await new Promise((r) => setTimeout(r, 100));
+    // Wait for re-render so selection borders disappear
+    await new Promise((r) => setTimeout(r, 200));
 
     try {
-      // Capture the entire canvas content
-      const canvasEl = await html2canvas(canvas, {
+      // 1) Calculate bounding box of ALL elements (including connector overflow)
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const el of elements) {
+        const elW = el.width || 200;
+        const elH = el.height || 100;
+        minX = Math.min(minX, el.x);
+        minY = Math.min(minY, el.y);
+        maxX = Math.max(maxX, el.x + elW);
+        maxY = Math.max(maxY, el.y + elH);
+
+        // Connectors: local points can overflow the element bounding box
+        const isConn = el.type === ELEMENT_TYPES.LINE ||
+          el.type === ELEMENT_TYPES.ARROW || el.type === ELEMENT_TYPES.ARC;
+        if (isConn) {
+          if (el.x1 != null) {
+            minX = Math.min(minX, el.x + el.x1);
+            minY = Math.min(minY, el.y + el.y1);
+            maxX = Math.max(maxX, el.x + el.x1);
+            maxY = Math.max(maxY, el.y + el.y1);
+          }
+          if (el.x2 != null) {
+            minX = Math.min(minX, el.x + el.x2);
+            minY = Math.min(minY, el.y + el.y2);
+            maxX = Math.max(maxX, el.x + el.x2);
+            maxY = Math.max(maxY, el.y + el.y2);
+          }
+          if (el.type === ELEMENT_TYPES.ARC && el.cx != null) {
+            minX = Math.min(minX, el.x + el.cx);
+            minY = Math.min(minY, el.y + el.cy);
+            maxX = Math.max(maxX, el.x + el.cx);
+            maxY = Math.max(maxY, el.y + el.cy);
+          }
+        }
+      }
+
+      // 2) Add padding
+      const padding = 60;
+      minX = Math.max(0, minX - padding);
+      minY = Math.max(0, minY - padding);
+      maxX = maxX + padding;
+      maxY = maxY + padding;
+
+      const cropW = maxX - minX;
+      const cropH = maxY - minY;
+
+      // 3) Clone the canvas-inner content into an offscreen container
+      //    positioned so that elements appear at their correct relative positions
+      const canvasInner = canvasRef.current?.querySelector('.storyboard-canvas-inner');
+      if (!canvasInner) return;
+
+      const clone = canvasInner.cloneNode(true);
+
+      // Remove UI-only elements from the clone (selection handles, etc.)
+      clone.querySelectorAll('.sb-resize-handle, .sb-selection-box, .sb-marquee, .sb-link-floating-bar, .sb-control-point, .sb-connector-endpoint, .sb-connector-control-point').forEach(el => el.remove());
+      // Remove selected styling
+      clone.querySelectorAll('.sb-selected').forEach(el => el.classList.remove('sb-selected'));
+      // Ensure all elements and SVGs have overflow visible for html2canvas
+      clone.querySelectorAll('.sb-element').forEach(el => { el.style.overflow = 'visible'; });
+      clone.querySelectorAll('svg').forEach(svg => { svg.style.overflow = 'visible'; });
+
+      const container = document.createElement('div');
+      container.style.cssText = `
+        position: fixed;
+        left: -99999px;
+        top: 0;
+        width: ${cropW}px;
+        height: ${cropH}px;
+        overflow: hidden;
+        background: #ffffff;
+        z-index: -1;
+      `;
+
+      // Offset the clone so that minX,minY maps to 0,0 in the container
+      clone.style.cssText = `
+        position: absolute;
+        left: ${-minX}px;
+        top: ${-minY}px;
+        width: ${maxX + padding}px;
+        height: ${maxY + padding}px;
+      `;
+
+      container.appendChild(clone);
+      document.body.appendChild(container);
+
+      // Wait for images to settle
+      await new Promise((r) => setTimeout(r, 100));
+
+      // 4) Capture the container
+      const captured = await html2canvas(container, {
         backgroundColor: '#ffffff',
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        width: canvas.scrollWidth,
-        height: canvas.scrollHeight,
+        width: cropW,
+        height: cropH,
       });
 
-      const imgData = canvasEl.toDataURL('image/png');
-      const imgWidth = canvasEl.width;
-      const imgHeight = canvasEl.height;
+      // Clean up
+      document.body.removeChild(container);
 
-      // Determine PDF orientation based on canvas aspect ratio
-      const orientation = imgWidth > imgHeight ? 'landscape' : 'portrait';
-      const pdf = new jsPDF(orientation, 'px', [imgWidth / 2, imgHeight / 2]);
+      const imgData = captured.toDataURL('image/png');
+      const imgWidth = captured.width;
+      const imgHeight = captured.height;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth / 2, imgHeight / 2);
+      // 5) Create PDF sized to fit
+      const pdfW = imgWidth / 2;
+      const pdfH = imgHeight / 2;
+      const orientation = pdfW > pdfH ? 'landscape' : 'portrait';
+      const pdf = new jsPDF(orientation, 'px', [pdfW, pdfH]);
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
       pdf.save(`storyboard-${boardId}.pdf`);
     } catch (err) {
       console.error('Export PDF error:', err);
@@ -1592,6 +2198,7 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
 
     // Restore selection
     setSelectedId(prevSelected);
+    setSelectedIds(prevSelectedIds);
   };
 
   // Reset view
@@ -1608,15 +2215,54 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
 
     const isConnector = el.type === ELEMENT_TYPES.LINE || el.type === ELEMENT_TYPES.ARROW || el.type === ELEMENT_TYPES.ARC;
 
+    // For connectors, compute a bounding box that includes all points
+    // (endpoints + arc control point + quadratic bezier extremes) so the parent div fully contains the SVG
+    let connBounds = null;
+    if (isConnector) {
+      const xVals = [el.x1, el.x2];
+      const yVals = [el.y1, el.y2];
+      if (el.type === ELEMENT_TYPES.ARC && el.cx != null) {
+        xVals.push(el.cx);
+        yVals.push(el.cy);
+        // For quadratic bezier, compute the actual curve extremes
+        // B(t) = (1-t)^2*P0 + 2*(1-t)*t*CP + t^2*P1
+        // Extremes occur where B'(t)=0: t = (P0 - CP) / (P0 - 2*CP + P1)
+        const computeExtreme = (p0, cp, p1) => {
+          const denom = p0 - 2 * cp + p1;
+          if (Math.abs(denom) < 0.001) return [];
+          const t = (p0 - cp) / denom;
+          if (t > 0 && t < 1) {
+            return [(1 - t) * (1 - t) * p0 + 2 * (1 - t) * t * cp + t * t * p1];
+          }
+          return [];
+        };
+        computeExtreme(el.x1, el.cx, el.x2).forEach(v => xVals.push(v));
+        computeExtreme(el.y1, el.cy, el.y2).forEach(v => yVals.push(v));
+      }
+      const pad = 10;
+      const localMinX = Math.min(...xVals) - pad;
+      const localMinY = Math.min(...yVals) - pad;
+      const localMaxX = Math.max(...xVals) + pad;
+      const localMaxY = Math.max(...yVals) + pad;
+      connBounds = {
+        // Offset of the expanded box relative to el.x, el.y
+        offX: Math.min(0, localMinX),
+        offY: Math.min(0, localMinY),
+        w: Math.max(el.width, localMaxX) - Math.min(0, localMinX),
+        h: Math.max(el.height, localMaxY) - Math.min(0, localMinY),
+      };
+    }
+
     const baseStyle = {
       position: 'absolute',
-      left: el.x, top: el.y,
-      width: el.width,
-      height: isConnector ? el.height : (el.type === ELEMENT_TYPES.TEXT ? 'auto' : el.height),
+      left: isConnector ? el.x + connBounds.offX : el.x,
+      top: isConnector ? el.y + connBounds.offY : el.y,
+      width: isConnector ? connBounds.w : el.width,
+      height: isConnector ? connBounds.h : (el.type === ELEMENT_TYPES.TEXT ? 'auto' : el.height),
       minHeight: el.type === ELEMENT_TYPES.TEXT ? el.height : undefined,
-      cursor: el.locked ? 'default' : (dragInfo?.id === el.id ? 'grabbing' : 'grab'),
+      cursor: 'default',
       zIndex: isSelected ? 999 : 'auto',
-      ...(isConnector ? { border: 'none', background: 'transparent' } : {}),
+      ...(isConnector ? { border: 'none', background: 'transparent', overflow: 'visible' } : {}),
     };
 
     return (
@@ -1679,22 +2325,82 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
                   <img src={el.thumbnail} alt="" draggable={false} />
                 </div>
                 <div className="sb-link-info">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                  </svg>
                   <span>{el.label}</span>
                 </div>
               </>
             ) : (
-              <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0066cc" strokeWidth="2">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                </svg>
-                <span>{el.label}</span>
-              </>
+              <span>{el.label}</span>
             )}
+          </div>
+        )}
+
+        {/* Floating action bar for link elements (Freeform-style) */}
+        {el.type === ELEMENT_TYPES.LINK && isSelected && (
+          <div className="sb-link-floating-bar" onMouseDown={(e) => e.stopPropagation()}>
+            <button
+              className="sb-link-floating-btn"
+              onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(el.url); }}
+              title="Copier le lien"
+            >
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+            </button>
+            <button
+              className="sb-link-floating-btn"
+              onClick={(e) => { e.stopPropagation(); window.open(el.url, '_blank', 'noopener'); }}
+              title="Voir la vidéo"
+            >
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+            <button
+              className="sb-link-floating-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                const newUrl = prompt('Modifier le lien :', el.url);
+                if (newUrl && newUrl.trim()) {
+                  const url = newUrl.trim();
+                  let thumbnail = null;
+                  let label = url;
+                  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+                  if (ytMatch) {
+                    thumbnail = `https://img.youtube.com/vi/${ytMatch[1]}/mqdefault.jpg`;
+                    label = 'YouTube';
+                  }
+                  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+                  if (vimeoMatch) label = 'Vimeo';
+                  try {
+                    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+                    if (label === url) label = parsed.hostname.replace('www.', '');
+                  } catch { /* keep url as label */ }
+                  updateElement(el.id, {
+                    url: url.startsWith('http') ? url : `https://${url}`,
+                    label,
+                    thumbnail,
+                    height: thumbnail ? 200 : 52,
+                  });
+                }
+              }}
+              title="Modifier le lien"
+            >
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21.174 6.812a1 1 0 00-3.986-3.987L3.842 16.174a2 2 0 00-.5.83l-1.321 4.352a.5.5 0 00.623.622l4.353-1.32a2 2 0 00.83-.497z" />
+              </svg>
+            </button>
+            <button
+              className="sb-link-floating-btn sb-link-floating-delete"
+              onClick={(e) => { e.stopPropagation(); deleteElement(el.id); }}
+              title="Supprimer"
+            >
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+            </button>
           </div>
         )}
 
@@ -1728,12 +2434,22 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
         )}
 
         {/* Connector elements: line, arrow, arc */}
-        {(el.type === ELEMENT_TYPES.LINE || el.type === ELEMENT_TYPES.ARROW || el.type === ELEMENT_TYPES.ARC) && (
+        {isConnector && (() => {
+          // Shift all local coords by -connBounds.offX/offY so they align
+          // within the expanded parent div
+          const dx = -connBounds.offX;
+          const dy = -connBounds.offY;
+          const sx1 = el.x1 + dx, sy1 = el.y1 + dy;
+          const sx2 = el.x2 + dx, sy2 = el.y2 + dy;
+          const scx = el.type === ELEMENT_TYPES.ARC ? el.cx + dx : 0;
+          const scy = el.type === ELEMENT_TYPES.ARC ? el.cy + dy : 0;
+
+          return (
           <svg
             className="sb-connector-element"
-            width={el.width}
-            height={el.height}
-            viewBox={`0 0 ${el.width} ${el.height}`}
+            width={connBounds.w}
+            height={connBounds.h}
+            viewBox={`0 0 ${connBounds.w} ${connBounds.h}`}
             style={{ overflow: 'visible' }}
           >
             <defs>
@@ -1753,7 +2469,7 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
             </defs>
             {el.type === ELEMENT_TYPES.ARC ? (
               <path
-                d={`M ${el.x1} ${el.y1} Q ${el.cx} ${el.cy} ${el.x2} ${el.y2}`}
+                d={`M ${sx1} ${sy1} Q ${scx} ${scy} ${sx2} ${sy2}`}
                 fill="none"
                 stroke={el.strokeColor || '#1d1d1f'}
                 strokeWidth={el.strokeWidth || 2}
@@ -1761,8 +2477,8 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
               />
             ) : (
               <line
-                x1={el.x1} y1={el.y1}
-                x2={el.x2} y2={el.y2}
+                x1={sx1} y1={sy1}
+                x2={sx2} y2={sy2}
                 stroke={el.strokeColor || '#1d1d1f'}
                 strokeWidth={el.strokeWidth || 2}
                 strokeLinecap="round"
@@ -1772,15 +2488,15 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
             {/* Invisible thick hit area for easier selection */}
             {el.type === ELEMENT_TYPES.ARC ? (
               <path
-                d={`M ${el.x1} ${el.y1} Q ${el.cx} ${el.cy} ${el.x2} ${el.y2}`}
+                d={`M ${sx1} ${sy1} Q ${scx} ${scy} ${sx2} ${sy2}`}
                 fill="none"
                 stroke="transparent"
                 strokeWidth="12"
               />
             ) : (
               <line
-                x1={el.x1} y1={el.y1}
-                x2={el.x2} y2={el.y2}
+                x1={sx1} y1={sy1}
+                x2={sx2} y2={sy2}
                 stroke="transparent"
                 strokeWidth="12"
               />
@@ -1789,7 +2505,7 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
             {isSelected && !isEditing && (
               <>
                 <circle
-                  cx={el.x1} cy={el.y1} r="5"
+                  cx={sx1} cy={sy1} r="5"
                   className="sb-connector-endpoint"
                   onMouseDown={(e) => {
                     e.stopPropagation();
@@ -1798,7 +2514,7 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
                   }}
                 />
                 <circle
-                  cx={el.x2} cy={el.y2} r="5"
+                  cx={sx2} cy={sy2} r="5"
                   className="sb-connector-endpoint"
                   onMouseDown={(e) => {
                     e.stopPropagation();
@@ -1806,9 +2522,13 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
                     setResizeInfo({ id: el.id, handle: 'p2', startX: coords.x, startY: coords.y, origX: el.x, origY: el.y, origW: el.width, origH: el.height, origX2: el.x2, origY2: el.y2 });
                   }}
                 />
-                {el.type === ELEMENT_TYPES.ARC && (
+                {el.type === ELEMENT_TYPES.ARC && (() => {
+                  // Display the green dot at the curve midpoint (t=0.5), not at the control point
+                  const midCurveX = 0.25 * sx1 + 0.5 * scx + 0.25 * sx2;
+                  const midCurveY = 0.25 * sy1 + 0.5 * scy + 0.25 * sy2;
+                  return (
                   <circle
-                    cx={el.cx} cy={el.cy} r="5"
+                    cx={midCurveX} cy={midCurveY} r="5"
                     className="sb-connector-control-point"
                     onMouseDown={(e) => {
                       e.stopPropagation();
@@ -1818,11 +2538,13 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
                       controlPointDragRef.current = dragData;
                     }}
                   />
-                )}
+                  );
+                })()}
               </>
             )}
           </svg>
-        )}
+          );
+        })()}
 
         {isSelected && !isEditing && !isConnector && !el.locked && (
           <>
@@ -1838,7 +2560,7 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
         )}
 
         {/* Element options popover — appears below the selected element */}
-        {isPrimary && !isEditing && (
+        {isPrimary && !isEditing && el.type !== ELEMENT_TYPES.LINK && (
           <div
             className="sb-text-options"
             onMouseDown={(e) => e.stopPropagation()}
@@ -2022,17 +2744,7 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
                 <span className="sb-popover-info">Image</span>
               )}
 
-              {/* === LINK popover: edit URL === */}
-              {el.type === ELEMENT_TYPES.LINK && (
-                <input
-                  type="text"
-                  className="sb-popover-url-input"
-                  value={el.url || ''}
-                  placeholder="https://..."
-                  onChange={(e) => updateElement(el.id, { url: e.target.value })}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              )}
+
 
               {/* Delete button for all types */}
               <button
@@ -2066,17 +2778,14 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
   return (
     <div className={`storyboard-page ${embedded ? 'sb-editor-embedded' : ''}`}>
       {/* Top bar */}
-      <div className="sb-topbar">
+      <div className="sb-topbar" style={{ position: 'relative' }}>
         <div className="sb-topbar-left">
           <button className="sb-back-btn" onClick={onBack}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5m7-7l-7 7 7 7" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
           <h1 className="sb-title">{boardTitle}</h1>
-          <span className="sb-subtitle">
-            {saving ? 'Sauvegarde...' : lastSaved ? 'Sauvegarde auto' : 'Edition'}
-          </span>
         </div>
 
         <div className="sb-topbar-center">
@@ -2143,7 +2852,7 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
           </button>
           <div className="sb-tool-divider" />
           <button className="sb-action-btn" onClick={() => setShowGrid(!showGrid)} title="Grille">
-            <svg viewBox="0 0 24 24" fill="none" stroke={showGrid ? '#007aff' : 'currentColor'} strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke={showGrid ? '#0a84ff' : 'currentColor'} strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
           </button>
           <div className="sb-zoom-controls">
             <button className="sb-zoom-btn" onClick={() => setZoom(prev => Math.max(0.25, prev - 0.25))}>-</button>
@@ -2151,22 +2860,26 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
             <button className="sb-zoom-btn" onClick={() => setZoom(prev => Math.min(3, prev + 0.25))}>+</button>
           </div>
           <div className="sb-tool-divider" />
-          <button className="sb-action-btn" onClick={exportBoard} title="Exporter en PDF">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-          </button>
+          <div className="sb-actions-pill">
+            <button className="sb-pill-btn" onClick={exportBoard} title="Exporter">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 14v4a2 2 0 002 2h12a2 2 0 002-2v-4" />
+                <polyline points="8 8 12 4 16 8" />
+                <line x1="12" y1="4" x2="12" y2="16" />
+              </svg>
+            </button>
+            <button className="sb-pill-btn" onClick={onNewBoard} title="Nouveau projet">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="3" />
+                <line x1="12" y1="8" x2="12" y2="16" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Sub toolbars */}
-      {tool === 'sticky' && (
-        <div className="sb-sub-toolbar">
-          <span className="sb-sub-label">Couleur :</span>
-          {STICKY_COLORS.map(color => (
-            <button key={color} className={`sb-color-btn ${stickyColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setStickyColor(color)} />
-          ))}
-        </div>
-      )}
-
       {(tool === 'shape' || tool === 'line' || tool === 'arrow' || tool === 'arc') && (
         <div className="sb-sub-toolbar">
           <span className="sb-sub-label">Forme :</span>
@@ -2211,7 +2924,18 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
       {/* Canvas area */}
       <div
         ref={wrapperRef}
-        className="storyboard-canvas-wrapper"
+        className={`storyboard-canvas-wrapper ${isSpaceHeld ? (isPanning ? 'sb-panning' : 'sb-space-held') : ''}`}
+        style={showGrid ? (() => {
+          const gridBase = 24;
+          const gridSize = gridBase * zoom;
+          const dotSize = Math.max(0.5, Math.min(1.5, 1 * zoom));
+          const dotColor = 'rgba(180, 180, 185, 1)';
+          return {
+            backgroundImage: `radial-gradient(circle, ${dotColor} ${dotSize}px, transparent ${dotSize}px)`,
+            backgroundSize: `${gridSize}px ${gridSize}px`,
+            backgroundPosition: `${panOffset.x % gridSize}px ${panOffset.y % gridSize}px`,
+          };
+        })() : undefined}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
@@ -2220,8 +2944,13 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
       >
         <div
           ref={canvasRef}
-          className={`storyboard-canvas ${showGrid ? 'sb-grid' : ''} ${isPanning ? 'sb-panning' : ''}`}
-          style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`, transformOrigin: '0 0' }}
+          className={`storyboard-canvas ${isPanning ? 'sb-panning' : ''} ${isSpaceHeld && !isPanning ? 'sb-space-held' : ''}`}
+          style={{
+            width: `${canvasBounds.width}px`,
+            height: `${canvasBounds.height}px`,
+            transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`,
+            transformOrigin: '0 0',
+          }}
           onClick={handleCanvasClick}
           onMouseDown={handleCanvasMouseDown}
         >
@@ -2244,6 +2973,42 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
             }}
           >
             <g transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoom})`}>
+              {/* Anchor points on all elements */}
+              {elements.filter(el => !CONNECTOR_TYPES.includes(el.type)).map(el => {
+                const anchors = getAnchorPoints(el);
+                return anchors.map(a => (
+                  <circle
+                    key={`${a.id}-${a.anchor}`}
+                    cx={a.x} cy={a.y}
+                    r={4 / zoom}
+                    className="sb-anchor-point"
+                    fill={
+                      (drawInfo.snapTarget && drawInfo.snapTarget.id === a.id && drawInfo.snapTarget.anchor === a.anchor) ||
+                      (drawInfo.sourceSnap && drawInfo.sourceSnap.id === a.id && drawInfo.sourceSnap.anchor === a.anchor)
+                        ? '#34c759' : 'rgba(0, 122, 255, 0.4)'
+                    }
+                    stroke={
+                      (drawInfo.snapTarget && drawInfo.snapTarget.id === a.id && drawInfo.snapTarget.anchor === a.anchor) ||
+                      (drawInfo.sourceSnap && drawInfo.sourceSnap.id === a.id && drawInfo.sourceSnap.anchor === a.anchor)
+                        ? '#34c759' : '#007aff'
+                    }
+                    strokeWidth={1.5 / zoom}
+                  />
+                ));
+              })}
+
+              {/* Snap ring indicator */}
+              {drawInfo.snapTarget && (
+                <circle
+                  cx={drawInfo.snapTarget.x} cy={drawInfo.snapTarget.y}
+                  r={10 / zoom}
+                  fill="none"
+                  stroke="#34c759"
+                  strokeWidth={2 / zoom}
+                  opacity="0.6"
+                />
+              )}
+
               {drawInfo.type === ELEMENT_TYPES.ARC ? (() => {
                 const mx = (drawInfo.startX + drawInfo.currentX) / 2;
                 const my = (drawInfo.startY + drawInfo.currentY) / 2;
@@ -2392,6 +3157,38 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
             <h3>Commencez votre storyboard</h3>
             <p>Cliquez sur un outil puis sur le canevas pour ajouter des elements.<br />
               Glissez-deposez des images directement sur le plan de travail.</p>
+           </div>
+        )}
+
+        {/* Custom scrollbars */}
+        {scrollbarInfo && scrollbarInfo.showV && (
+          <div
+            className="sb-scrollbar sb-scrollbar-v"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div
+              className="sb-scrollbar-thumb"
+              style={{
+                top: `${scrollbarInfo.vThumbPos}px`,
+                height: `${scrollbarInfo.vThumbLen}px`,
+              }}
+              onMouseDown={(e) => handleScrollbarMouseDown('y', e)}
+            />
+          </div>
+        )}
+        {scrollbarInfo && scrollbarInfo.showH && (
+          <div
+            className="sb-scrollbar sb-scrollbar-h"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div
+              className="sb-scrollbar-thumb"
+              style={{
+                left: `${scrollbarInfo.hThumbPos}px`,
+                width: `${scrollbarInfo.hThumbLen}px`,
+              }}
+              onMouseDown={(e) => handleScrollbarMouseDown('x', e)}
+            />
           </div>
         )}
       </div>
@@ -2512,11 +3309,26 @@ function BoardEditor({ boardId, onBack, embedded = false }) {
 export default function Storyboard({ embedded = false }) {
   const [activeBoardId, setActiveBoardId] = useState(null);
 
+  const handleNewBoard = async () => {
+    try {
+      const res = await storyboardAPI.create({
+        title: 'Sans titre',
+        color: '#007aff',
+      });
+      if (res.success) {
+        setActiveBoardId(res.data.id);
+      }
+    } catch (err) {
+      console.error('Erreur creation board:', err);
+    }
+  };
+
   if (activeBoardId) {
     return (
       <BoardEditor
         boardId={activeBoardId}
         onBack={() => setActiveBoardId(null)}
+        onNewBoard={handleNewBoard}
         embedded={embedded}
       />
     );

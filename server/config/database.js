@@ -12,29 +12,29 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || '',
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 5000,
+  statement_timeout: 30000,
 });
 
-// Test de connexion
 pool.on('connect', () => {
-  console.log('✅ Connecté à PostgreSQL');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('✅ Connecté à PostgreSQL');
+  }
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Erreur PostgreSQL:', err);
-  process.exit(-1);
+  console.error('❌ Erreur PostgreSQL inattendue:', err.message);
 });
 
-// Helper pour les requêtes
+// Helper pour les requetes
 const query = async (text, params) => {
-  const start = Date.now();
   try {
     const result = await pool.query(text, params);
-    const duration = Date.now() - start;
-    console.log('📊 Query:', { text: text.substring(0, 50), duration: `${duration}ms`, rows: result.rowCount });
     return result;
   } catch (error) {
-    console.error('❌ Query Error:', error.message);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('❌ Query Error:', error.message);
+    }
     throw error;
   }
 };

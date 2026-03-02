@@ -89,7 +89,7 @@ const getAllTransactions = async (req, res) => {
     
     res.json({ success: true, data: result.rows });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -110,7 +110,7 @@ const getTransactionById = async (req, res) => {
     
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -162,7 +162,7 @@ const createTransaction = async (req, res) => {
     
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -175,11 +175,6 @@ const updateTransaction = async (req, res) => {
       client, project, payment_method, reference, notes,
       payment_type, total_project, acompte_number, total_acomptes
     } = req.body;
-    
-    console.log('=== updateTransaction ===');
-    console.log('id:', id);
-    console.log('body:', req.body);
-    console.log('total_project from body:', total_project, typeof total_project);
     
     const result = await query(`
       UPDATE transactions SET
@@ -206,16 +201,13 @@ const updateTransaction = async (req, res) => {
       id
     ]);
     
-    console.log('Update result:', result.rows[0]?.total_project);
-    
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Transaction non trouvée' });
     }
     
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    console.error('Update error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -232,7 +224,7 @@ const deleteTransaction = async (req, res) => {
     
     res.json({ success: true, message: 'Transaction supprimée' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -318,7 +310,7 @@ const getStats = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 

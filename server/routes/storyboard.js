@@ -3,6 +3,7 @@
 // ============================================
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 const {
   getAllBoards,
   getBoardById,
@@ -14,16 +15,14 @@ const {
   saveElements,
 } = require('../controllers/storyboardController');
 
-// Routes publiques (pas d'auth requise pour le storyboard)
-router.get('/', getAllBoards);
-router.get('/stats', getBoardStats);
-router.get('/:id', getBoardById);
-router.post('/', createBoard);
-router.put('/:id', updateBoard);
-router.post('/:id/duplicate', duplicateBoard);
-router.delete('/:id', deleteBoard);
-
-// Sauvegarde des éléments d'un board
-router.put('/:id/elements', saveElements);
+// All storyboard routes require authentication
+router.get('/', authenticateToken, getAllBoards);
+router.get('/stats', authenticateToken, getBoardStats);
+router.get('/:id', authenticateToken, getBoardById);
+router.post('/', authenticateToken, createBoard);
+router.put('/:id', authenticateToken, updateBoard);
+router.post('/:id/duplicate', authenticateToken, duplicateBoard);
+router.delete('/:id', authenticateToken, deleteBoard);
+router.put('/:id/elements', authenticateToken, saveElements);
 
 module.exports = router;

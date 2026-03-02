@@ -13,7 +13,7 @@ const getAllBoutiqueItems = async (req, res) => {
     res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Erreur getAllBoutiqueItems:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -30,7 +30,7 @@ const getBoutiqueItemById = async (req, res) => {
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Erreur getBoutiqueItemById:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -52,7 +52,7 @@ const createBoutiqueItem = async (req, res) => {
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Erreur createBoutiqueItem:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -89,7 +89,7 @@ const updateBoutiqueItem = async (req, res) => {
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Erreur updateBoutiqueItem:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -106,7 +106,7 @@ const deleteBoutiqueItem = async (req, res) => {
     res.json({ success: true, message: 'Produit supprimé' });
   } catch (error) {
     console.error('Erreur deleteBoutiqueItem:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -121,7 +121,7 @@ const getActiveBoutiqueItems = async (req, res) => {
     res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Erreur getActiveBoutiqueItems:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 

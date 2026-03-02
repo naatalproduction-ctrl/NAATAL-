@@ -5,8 +5,8 @@ const { query } = require('../config/database');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'REDACTED';
-const JWT_EXPIRES = '24h';
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES = '8h';
 
 // Connexion admin
 const login = async (req, res) => {
@@ -61,7 +61,7 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -71,7 +71,7 @@ const verifyToken = async (req, res) => {
     // L'utilisateur est déjà vérifié par le middleware auth
     res.json({ success: true, data: req.admin });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -100,7 +100,7 @@ const changePassword = async (req, res) => {
     
     res.json({ success: true, message: 'Mot de passe modifié avec succès' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -135,7 +135,7 @@ const createAdmin = async (req, res) => {
     
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -154,7 +154,7 @@ const getAllAdmins = async (req, res) => {
     
     res.json({ success: true, data: result.rows });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -204,7 +204,7 @@ const updateAdmin = async (req, res) => {
     
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -232,7 +232,7 @@ const deleteAdmin = async (req, res) => {
     
     res.json({ success: true, message: 'Utilisateur supprimé avec succès' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 

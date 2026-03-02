@@ -1,0 +1,130 @@
+/* ========================================
+   PARTNERS - Logos Partenaires
+   ======================================== */
+
+.partners {
+  position: relative;
+  padding: 80px 0;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.partners::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+}
+
+.partners-container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--section-padding-x);
+  text-align: center;
+}
+
+.partners-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  opacity: 0.6;
+  margin-bottom: 12px;
+}
+
+.partners-title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3vw, 36px);
+  font-weight: 600;
+  color: var(--color-white);
+  margin: 0 0 48px;
+  letter-spacing: -0.5px;
+}
+
+/* Infinite scroll track */
+.partners-track-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+}
+
+.partners-track {
+  display: flex;
+  gap: 48px;
+  align-items: center;
+  width: max-content;
+  animation: partners-scroll 30s linear infinite;
+}
+
+.partners-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes partners-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Partner item */
+.partners-item {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  padding: 0 12px;
+}
+
+.partners-item a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.partners-item img {
+  max-height: 48px;
+  max-width: 140px;
+  width: auto;
+  object-fit: contain;
+  filter: grayscale(100%) brightness(0.7);
+  opacity: 0.5;
+  transition: all 0.4s ease;
+}
+
+.partners-item:hover img {
+  filter: grayscale(0%) brightness(1);
+  opacity: 1;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .partners {
+    padding: 60px 0;
+  }
+
+  .partners-title {
+    margin-bottom: 32px;
+  }
+
+  .partners-track {
+    gap: 32px;
+    animation-duration: 20s;
+  }
+
+  .partners-item img {
+    max-height: 36px;
+    max-width: 100px;
+  }
+}

@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useSite } from '../context/SiteContext'
-import { usersAPI, comptabiliteAPI, projetsAPI, attachmentsAPI, cinemaAPI, boutiqueAPI, uploadsAPI, storyboardAPI } from '../services/api'
+import { usersAPI, comptabiliteAPI, projetsAPI, attachmentsAPI, cinemaAPI, boutiqueAPI, uploadsAPI, storyboardAPI, partnersAPI } from '../services/api'
 import Storyboard from './Storyboard'
 import './Admin.css'
 
@@ -206,6 +206,22 @@ export default function Admin() {
   const [boutiqueSuccess, setBoutiqueSuccess] = useState('')
   const [newFeature, setNewFeature] = useState('')
 
+  // État pour les partenaires
+  const [partnersItems, setPartnersItems] = useState([])
+  const [showAddPartner, setShowAddPartner] = useState(false)
+  const [editingPartner, setEditingPartner] = useState(null)
+  const [newPartner, setNewPartner] = useState({
+    name: '',
+    logo_url: '',
+    website_url: '',
+    display_order: 0,
+    is_active: true
+  })
+  const [partnerError, setPartnerError] = useState('')
+  const [partnerSuccess, setPartnerSuccess] = useState('')
+  const partnerLogoInputRef = useRef(null)
+  const editPartnerLogoInputRef = useRef(null)
+
   // État pour les uploads de covers
   const [uploadingCover, setUploadingCover] = useState(false)
   const cinemaCoverInputRef = useRef(null)
@@ -288,11 +304,28 @@ export default function Admin() {
     }
   }
 
+  const fetchPartnersData = async () => {
+    try {
+      const response = await partnersAPI.getAll()
+      if (response.success) {
+        setPartnersItems(response.data)
+      }
+    } catch (err) {
+      console.error('Erreur chargement partenaires:', err)
+    }
+  }
+
   useEffect(() => {
     if (isAuthenticated && admin?.role === 'superadmin') {
       fetchUsers()
     }
   }, [isAuthenticated, admin])
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'partners') {
+      fetchPartnersData()
+    }
+  }, [isAuthenticated, activeTab])
 
   useEffect(() => {
     if (isAuthenticated && activeTab === 'comptabilite') {
@@ -802,6 +835,88 @@ export default function Admin() {
     }
   }
 
+  // CRUD Partenaires
+  const handleCreatePartner = async () => {
+    setPartnerError('')
+    setPartnerSuccess('')
+
+    if (!newPartner.name || !newPartner.logo_url) {
+      setPartnerError('Le nom et le logo sont requis')
+      return
+    }
+
+    try {
+      const response = await partnersAPI.create(newPartner)
+      if (response.success) {
+        setPartnerSuccess('Partenaire ajouté avec succès')
+        setShowAddPartner(false)
+        setNewPartner({ name: '', logo_url: '', website_url: '', display_order: 0, is_active: true })
+        fetchPartnersData()
+        setTimeout(() => setPartnerSuccess(''), 3000)
+      }
+    } catch (err) {
+      setPartnerError(err.message || 'Erreur lors de la création')
+    }
+  }
+
+  const handleUpdatePartner = async () => {
+    if (!editingPartner) return
+
+    try {
+      const response = await partnersAPI.update(editingPartner.id, editingPartner)
+      if (response.success) {
+        setPartnerSuccess('Partenaire mis à jour')
+        setEditingPartner(null)
+        fetchPartnersData()
+        setTimeout(() => setPartnerSuccess(''), 3000)
+      }
+    } catch (err) {
+      setPartnerError(err.message || 'Erreur lors de la mise à jour')
+    }
+  }
+
+  const handleDeletePartner = async (id) => {
+    if (!window.confirm('Supprimer ce partenaire ? Cette action est irréversible.')) return
+
+    try {
+      const response = await partnersAPI.delete(id)
+      if (response.success) {
+        setPartnerSuccess('Partenaire supprimé')
+        fetchPartnersData()
+        setTimeout(() => setPartnerSuccess(''), 3000)
+      }
+    } catch (err) {
+      setPartnerError(err.message || 'Erreur lors de la suppression')
+    }
+  }
+
+  const handlePartnerLogoUpload = async (file, isEditing = false) => {
+    if (!file) return
+    setUploadingCover(true)
+    try {
+      const response = await uploadsAPI.uploadCover(file, 'partner')
+      if (response.success) {
+        const logoUrl = response.data.url
+        if (isEditing && editingPartner) {
+          setEditingPartner({ ...editingPartner, logo_url: logoUrl })
+        } else {
+          setNewPartner(prev => ({ ...prev, logo_url: logoUrl }))
+        }
+      }
+    } catch (err) {
+      setPartnerError('Erreur lors de l\'upload du logo')
+    } finally {
+      setUploadingCover(false)
+    }
+  }
+
+  const getPartnerLogoUrl = (url) => {
+    if (!url) return null
+    if (url.startsWith('http')) return url
+    const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'
+    return `${baseUrl}${url}`
+  }
+
   const addFeature = (isEditing = false) => {
     if (!newFeature.trim()) return
     if (isEditing && editingBoutique) {
@@ -1275,6 +1390,14 @@ export default function Admin() {
         <line x1="3" y1="9" x2="21" y2="9"/>
         <circle cx="15" cy="15" r="2.5"/>
       </svg>
+    ),
+    partners: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
     )
   }
 
@@ -1377,6 +1500,7 @@ export default function Admin() {
     { id: 'messages', label: 'Messages', icon: icons.messages, badge: unreadCount },
     { id: 'comptabilite', label: 'Comptabilité', icon: icons.comptabilite },
     { id: 'storyboard', label: 'Storyboard', icon: icons.storyboard },
+    { id: 'partners', label: 'Partenaires', icon: icons.partners },
     { id: 'settings', label: 'Paramètres', icon: icons.settings }
   ]
 
@@ -4202,6 +4326,265 @@ export default function Admin() {
             {activeTab === 'storyboard' && (
               <motion.div key="storyboard" {...pageTransition} className="storyboard-section">
                 <Storyboard embedded={true} />
+              </motion.div>
+            )}
+
+            {/* ============================================ */}
+            {/* PARTENAIRES */}
+            {/* ============================================ */}
+            {activeTab === 'partners' && (
+              <motion.div key="partners" {...pageTransition} className="partners-admin-section">
+                <div className="section-header">
+                  <h2>Gestion des Partenaires</h2>
+                  <p>Gérez les logos partenaires affichés sur le site</p>
+                  <motion.button
+                    className="btn-primary"
+                    onClick={() => setShowAddPartner(true)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {icons.plus} Ajouter un partenaire
+                  </motion.button>
+                </div>
+
+                <AnimatePresence>
+                  {partnerError && (
+                    <motion.div className="alert alert-error" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                      {partnerError}
+                    </motion.div>
+                  )}
+                  {partnerSuccess && (
+                    <motion.div className="alert alert-success" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                      {partnerSuccess}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="partners-admin-grid">
+                  {partnersItems.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon">{icons.partners}</div>
+                      <h3>Aucun partenaire</h3>
+                      <p>Commencez par ajouter votre premier partenaire</p>
+                    </div>
+                  ) : (
+                    partnersItems.map((partner, index) => (
+                      <motion.div
+                        key={partner.id}
+                        className="partner-admin-card"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <div className="partner-card-logo">
+                          {partner.logo_url ? (
+                            <img src={getPartnerLogoUrl(partner.logo_url)} alt={partner.name} onError={(e) => e.target.style.display = 'none'} />
+                          ) : (
+                            <div className="partner-no-logo">{icons.partners}</div>
+                          )}
+                        </div>
+                        <div className="partner-card-info">
+                          <h3>{partner.name}</h3>
+                          {partner.website_url && <span className="partner-url">{partner.website_url}</span>}
+                          <div className="partner-card-meta">
+                            <span className={`badge badge-status ${partner.is_active ? 'active' : 'inactive'}`}>
+                              {partner.is_active ? 'Actif' : 'Inactif'}
+                            </span>
+                            <span className="partner-order">Ordre: {partner.display_order || 0}</span>
+                          </div>
+                        </div>
+                        <div className="partner-card-actions">
+                          <motion.button
+                            className="btn-icon"
+                            onClick={() => setEditingPartner({...partner})}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            title="Modifier"
+                          >
+                            {icons.edit}
+                          </motion.button>
+                          <motion.button
+                            className="btn-icon btn-danger"
+                            onClick={() => handleDeletePartner(partner.id)}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            title="Supprimer"
+                          >
+                            {icons.trash}
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </div>
+
+                {/* Modal: Ajouter un partenaire */}
+                <AnimatePresence>
+                  {showAddPartner && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddPartner(false)}>
+                      <motion.div className="modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                          <h2>Ajouter un partenaire</h2>
+                          <button className="modal-close" onClick={() => setShowAddPartner(false)}>{icons.close}</button>
+                        </div>
+                        <div className="modal-body">
+                          <div className="form-group">
+                            <label>Nom du partenaire *</label>
+                            <input type="text" value={newPartner.name} onChange={(e) => setNewPartner({...newPartner, name: e.target.value})} placeholder="Nom du partenaire" />
+                          </div>
+                          <div className="form-group">
+                            <label>Logo *</label>
+                            <div className="cover-upload-group">
+                              <input
+                                type="url"
+                                value={newPartner.logo_url}
+                                onChange={(e) => setNewPartner({...newPartner, logo_url: e.target.value})}
+                                placeholder="https://... ou importez un fichier PNG"
+                              />
+                              <input
+                                type="file"
+                                ref={partnerLogoInputRef}
+                                accept="image/png,image/svg+xml,image/webp"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handlePartnerLogoUpload(e.target.files[0], false)}
+                              />
+                              <button
+                                type="button"
+                                className="btn-upload"
+                                onClick={() => partnerLogoInputRef.current?.click()}
+                                disabled={uploadingCover}
+                              >
+                                {uploadingCover ? (
+                                  <span className="upload-spinner"></span>
+                                ) : (
+                                  <>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                      <polyline points="17 8 12 3 7 8"/>
+                                      <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    Importer
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            {newPartner.logo_url && (
+                              <div className="cover-preview partner-logo-preview">
+                                <img src={getPartnerLogoUrl(newPartner.logo_url)} alt="Aperçu" onError={(e) => e.target.style.display = 'none'} />
+                              </div>
+                            )}
+                          </div>
+                          <div className="form-group">
+                            <label>Site web</label>
+                            <input type="url" value={newPartner.website_url} onChange={(e) => setNewPartner({...newPartner, website_url: e.target.value})} placeholder="https://..." />
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Ordre d'affichage</label>
+                              <input type="number" value={newPartner.display_order} onChange={(e) => setNewPartner({...newPartner, display_order: parseInt(e.target.value) || 0})} />
+                            </div>
+                            <div className="form-group">
+                              <label>Statut</label>
+                              <select value={newPartner.is_active ? 'true' : 'false'} onChange={(e) => setNewPartner({...newPartner, is_active: e.target.value === 'true'})}>
+                                <option value="true">Actif</option>
+                                <option value="false">Inactif</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="modal-footer">
+                          <button className="btn-cancel" onClick={() => setShowAddPartner(false)}>Annuler</button>
+                          <button type="button" className="btn-primary" onClick={handleCreatePartner}>Ajouter le partenaire</button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Modal: Modifier un partenaire */}
+                <AnimatePresence>
+                  {editingPartner && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingPartner(null)}>
+                      <motion.div className="modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                          <h2>Modifier le partenaire</h2>
+                          <button className="modal-close" onClick={() => setEditingPartner(null)}>{icons.close}</button>
+                        </div>
+                        <div className="modal-body">
+                          <div className="form-group">
+                            <label>Nom du partenaire *</label>
+                            <input type="text" value={editingPartner.name} onChange={(e) => setEditingPartner({...editingPartner, name: e.target.value})} />
+                          </div>
+                          <div className="form-group">
+                            <label>Logo *</label>
+                            <div className="cover-upload-group">
+                              <input
+                                type="url"
+                                value={editingPartner.logo_url}
+                                onChange={(e) => setEditingPartner({...editingPartner, logo_url: e.target.value})}
+                                placeholder="https://... ou importez un fichier PNG"
+                              />
+                              <input
+                                type="file"
+                                ref={editPartnerLogoInputRef}
+                                accept="image/png,image/svg+xml,image/webp"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handlePartnerLogoUpload(e.target.files[0], true)}
+                              />
+                              <button
+                                type="button"
+                                className="btn-upload"
+                                onClick={() => editPartnerLogoInputRef.current?.click()}
+                                disabled={uploadingCover}
+                              >
+                                {uploadingCover ? (
+                                  <span className="upload-spinner"></span>
+                                ) : (
+                                  <>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                      <polyline points="17 8 12 3 7 8"/>
+                                      <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    Importer
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            {editingPartner.logo_url && (
+                              <div className="cover-preview partner-logo-preview">
+                                <img src={getPartnerLogoUrl(editingPartner.logo_url)} alt="Aperçu" onError={(e) => e.target.style.display = 'none'} />
+                              </div>
+                            )}
+                          </div>
+                          <div className="form-group">
+                            <label>Site web</label>
+                            <input type="url" value={editingPartner.website_url || ''} onChange={(e) => setEditingPartner({...editingPartner, website_url: e.target.value})} placeholder="https://..." />
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Ordre d'affichage</label>
+                              <input type="number" value={editingPartner.display_order} onChange={(e) => setEditingPartner({...editingPartner, display_order: parseInt(e.target.value) || 0})} />
+                            </div>
+                            <div className="form-group">
+                              <label>Statut</label>
+                              <select value={editingPartner.is_active ? 'true' : 'false'} onChange={(e) => setEditingPartner({...editingPartner, is_active: e.target.value === 'true'})}>
+                                <option value="true">Actif</option>
+                                <option value="false">Inactif</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="modal-footer">
+                          <button className="btn-cancel" onClick={() => setEditingPartner(null)}>Annuler</button>
+                          <motion.button className="btn-primary" onClick={handleUpdatePartner} whileHover={{ scale: 1.02 }}>
+                            {icons.check} Enregistrer
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
 

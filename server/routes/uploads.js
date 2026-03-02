@@ -76,10 +76,9 @@ router.post('/cover', authenticateToken, upload.single('cover'), (req, res) => {
       message: 'Image uploadée avec succès'
     });
   } catch (error) {
-    console.error('Erreur upload cover:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message || 'Erreur lors de l\'upload' 
+    res.status(500).json({
+      success: false,
+      error: 'Erreur lors de l\'upload'
     });
   }
 });
@@ -88,8 +87,20 @@ router.post('/cover', authenticateToken, upload.single('cover'), (req, res) => {
 router.delete('/cover/:filename', authenticateToken, (req, res) => {
   try {
     const { filename } = req.params;
-    const filePath = path.join(__dirname, '..', 'uploads', 'covers', filename);
-    
+
+    // Path traversal protection
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return res.status(400).json({ success: false, error: 'Nom de fichier invalide' });
+    }
+
+    const uploadsDir = path.join(__dirname, '..', 'uploads', 'covers');
+    const filePath = path.join(uploadsDir, filename);
+    const resolved = path.resolve(filePath);
+
+    if (!resolved.startsWith(path.resolve(uploadsDir))) {
+      return res.status(400).json({ success: false, error: 'Chemin invalide' });
+    }
+
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
       res.json({ success: true, message: 'Image supprimée' });
@@ -97,8 +108,7 @@ router.delete('/cover/:filename', authenticateToken, (req, res) => {
       res.status(404).json({ success: false, error: 'Fichier non trouvé' });
     }
   } catch (error) {
-    console.error('Erreur suppression cover:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur lors de la suppression' });
   }
 });
 
@@ -111,10 +121,10 @@ router.use((error, req, res, next) => {
         error: 'Le fichier est trop volumineux. Taille max: 5MB' 
       });
     }
-    return res.status(400).json({ success: false, error: error.message });
+    return res.status(400).json({ success: false, error: 'Erreur lors de l\'upload du fichier' });
   }
   if (error) {
-    return res.status(400).json({ success: false, error: error.message });
+    return res.status(400).json({ success: false, error: 'Erreur lors du traitement du fichier' });
   }
   next();
 });

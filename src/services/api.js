@@ -448,6 +448,25 @@ export const uploadsAPI = {
 };
 
 // ============================================
+// API PARTENAIRES
+// ============================================
+export const partnersAPI = {
+  getActive: () => request('/partners/public'),
+  getAll: () => request('/partners'),
+  create: (data) => request('/partners', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => request(`/partners/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id) => request(`/partners/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// ============================================
 // HEALTH CHECK
 // ============================================
 export const checkAPIHealth = () => request('/health');

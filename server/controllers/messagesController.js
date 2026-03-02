@@ -17,7 +17,7 @@ const getAllMessages = async (req, res) => {
     
     res.json({ success: true, data: result.rows });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -32,7 +32,7 @@ const getMessageById = async (req, res) => {
     }
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -60,7 +60,7 @@ const createMessage = async (req, res) => {
       message: 'Message envoyé avec succès' 
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -77,7 +77,7 @@ const markAsRead = async (req, res) => {
     }
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -94,7 +94,7 @@ const archiveMessage = async (req, res) => {
     }
     res.json({ success: true, data: result.rows[0], message: 'Message archivé' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -109,7 +109,7 @@ const deleteMessage = async (req, res) => {
     }
     res.json({ success: true, message: 'Message supprimé' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -119,7 +119,7 @@ const deleteAllArchived = async (req, res) => {
     const result = await query('DELETE FROM messages WHERE is_archived = true');
     res.json({ success: true, message: `${result.rowCount} message(s) supprimé(s)` });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -136,7 +136,7 @@ const getMessagesStats = async (req, res) => {
     `);
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 

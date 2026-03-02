@@ -23,7 +23,7 @@ const getAllBoards = async (req, res) => {
     res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Erreur getAllBoards:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -51,7 +51,7 @@ const getBoardById = async (req, res) => {
     res.json({ success: true, data: board });
   } catch (error) {
     console.error('Erreur getBoardById:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -69,7 +69,7 @@ const createBoard = async (req, res) => {
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Erreur createBoard:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -102,7 +102,7 @@ const updateBoard = async (req, res) => {
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Erreur updateBoard:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -143,7 +143,7 @@ const duplicateBoard = async (req, res) => {
     res.status(201).json({ success: true, data: fullBoard.rows[0] });
   } catch (error) {
     console.error('Erreur duplicateBoard:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -160,7 +160,7 @@ const deleteBoard = async (req, res) => {
     res.json({ success: true, message: 'Storyboard supprimé' });
   } catch (error) {
     console.error('Erreur deleteBoard:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -179,7 +179,7 @@ const getBoardStats = async (req, res) => {
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Erreur getBoardStats:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -206,44 +206,62 @@ const saveElements = async (req, res) => {
 
     // Insérer les nouveaux éléments
     if (elements && elements.length > 0) {
+      // First pass: insert all elements and build clientId -> dbId mapping
+      const clientToDbId = {};
+      const insertedElements = [];
+
       for (let i = 0; i < elements.length; i++) {
         const el = elements[i];
-        await client.query(`
+        // Extract standard fields, put everything else in properties
+        const { type, element_type, x, pos_x, y, pos_y, width, height, content, id: elId, ...rest } = el;
+        const properties = { ...rest };
+        // Remove undefined values
+        Object.keys(properties).forEach(key => {
+          if (properties[key] === undefined) delete properties[key];
+        });
+        const result = await client.query(`
           INSERT INTO storyboard_elements 
           (storyboard_id, element_type, pos_x, pos_y, width, height, content, properties, z_index)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          RETURNING id
         `, [
           id,
-          el.type || el.element_type,
-          el.x ?? el.pos_x ?? 0,
-          el.y ?? el.pos_y ?? 0,
-          el.width || 200,
-          el.height || 200,
-          el.content || null,
-          JSON.stringify({
-            fontSize: el.fontSize,
-            fontWeight: el.fontWeight,
-            color: el.color,
-            src: el.src,
-            url: el.url,
-            label: el.label,
-            shape: el.shape,
-            fillColor: el.fillColor,
-            strokeColor: el.strokeColor,
-            strokeWidth: el.strokeWidth,
-            originalWidth: el.originalWidth,
-            originalHeight: el.originalHeight,
-            x1: el.x1,
-            y1: el.y1,
-            x2: el.x2,
-            y2: el.y2,
-            cx: el.cx,
-            cy: el.cy,
-            locked: el.locked || false,
-            thumbnail: el.thumbnail || null,
-          }),
+          type || element_type,
+          x ?? pos_x ?? 0,
+          y ?? pos_y ?? 0,
+          width || 200,
+          height || 200,
+          content || null,
+          JSON.stringify(properties),
           i,
         ]);
+        const dbId = result.rows[0].id;
+        if (elId) {
+          clientToDbId[elId] = dbId;
+        }
+        insertedElements.push({ dbId, properties });
+      }
+
+      // Second pass: update connectors' sourceId/targetId to use DB IDs
+      for (const { dbId, properties } of insertedElements) {
+        let needsUpdate = false;
+        const updatedProps = { ...properties };
+
+        if (updatedProps.sourceId && clientToDbId[updatedProps.sourceId] !== undefined) {
+          updatedProps.sourceId = clientToDbId[updatedProps.sourceId];
+          needsUpdate = true;
+        }
+        if (updatedProps.targetId && clientToDbId[updatedProps.targetId] !== undefined) {
+          updatedProps.targetId = clientToDbId[updatedProps.targetId];
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          await client.query(
+            'UPDATE storyboard_elements SET properties = $1 WHERE id = $2',
+            [JSON.stringify(updatedProps), dbId]
+          );
+        }
       }
     }
 
@@ -264,7 +282,7 @@ const saveElements = async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Erreur saveElements:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   } finally {
     client.release();
   }

@@ -16,7 +16,7 @@ const getAllSettings = async (req, res) => {
     
     res.json({ success: true, data: settings, raw: result.rows });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -31,7 +31,7 @@ const getSettingByKey = async (req, res) => {
     }
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -55,7 +55,7 @@ const updateSetting = async (req, res) => {
     
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -76,7 +76,7 @@ const updateMultipleSettings = async (req, res) => {
     
     res.json({ success: true, data: updated, message: 'Paramètres mis à jour' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -108,7 +108,7 @@ const getPublicSiteInfo = async (req, res) => {
     
     res.json({ success: true, data: siteInfo });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 

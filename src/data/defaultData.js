@@ -41,18 +41,6 @@ export const defaultMedias = [
     featured: true,
     order: 1
   },
-  { 
-    id: 2, 
-    name: 'Documentaire - Horizons', 
-    type: 'youtube', 
-    url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', 
-    thumbnail: '',
-    category: 'documentaire',
-    description: 'Exploration des paysages ivoiriens',
-    featured: false,
-    order: 2
-  },
-  
   // === CORPORATE ===
   { 
     id: 3, 
@@ -74,41 +62,6 @@ export const defaultMedias = [
     category: 'corporate',
     description: 'Présentation de la marque Cosy Home',
     featured: true,
-    order: 2
-  },
-  { 
-    id: 5, 
-    name: 'Groupe Azalai', 
-    type: 'youtube', 
-    url: 'https://www.youtube.com/embed/example3', 
-    thumbnail: '',
-    category: 'corporate',
-    description: 'Film corporate pour le Groupe Azalai',
-    featured: false,
-    order: 3
-  },
-  
-  // === PUBLICITÉ ===
-  { 
-    id: 6, 
-    name: 'Spot TV - Orange CI', 
-    type: 'youtube', 
-    url: 'https://www.youtube.com/embed/example4', 
-    thumbnail: '',
-    category: 'publicite',
-    description: 'Campagne publicitaire Orange Côte d\'Ivoire',
-    featured: true,
-    order: 1
-  },
-  { 
-    id: 7, 
-    name: 'Pub - Solibra', 
-    type: 'youtube', 
-    url: 'https://www.youtube.com/embed/example5', 
-    thumbnail: '',
-    category: 'publicite',
-    description: 'Spot publicitaire pour Solibra',
-    featured: false,
     order: 2
   },
 ]

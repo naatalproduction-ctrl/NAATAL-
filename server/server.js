@@ -3,6 +3,8 @@
 // ============================================
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config();
 
@@ -20,28 +22,70 @@ const cinemaRoutes = require('./routes/cinema');
 const boutiqueRoutes = require('./routes/boutique');
 const uploadsRoutes = require('./routes/uploads');
 const storyboardRoutes = require('./routes/storyboard');
+const partnersRoutes = require('./routes/partners');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const isProduction = process.env.NODE_ENV === 'production';
 
 // ============================================
-// Middleware
+// Security Middleware
 // ============================================
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false
+}));
+
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Servir les fichiers uploadés
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Log des requêtes
-app.use((req, res, next) => {
-  console.log(`📨 ${req.method} ${req.path}`);
-  next();
+// Rate limiting global
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Trop de requêtes, réessayez plus tard' }
 });
+app.use('/api/', globalLimiter);
+
+// Rate limiting strict sur login
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 10,
+  message: { success: false, error: 'Trop de tentatives de connexion, réessayez dans 15 minutes' }
+});
+app.use('/api/auth/login', authLimiter);
+
+// Rate limiting sur le formulaire de contact
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1h
+  max: 5,
+  message: { success: false, error: 'Trop de messages envoyés, réessayez plus tard' }
+});
+app.use('/api/messages', contactLimiter);
+
+// Body parsing with safe limits
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Servir les fichiers uploades avec headers securises
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res) => {
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Content-Disposition', 'inline');
+  }
+}));
+
+// Log des requetes (minimal en production)
+if (!isProduction) {
+  app.use((req, res, next) => {
+    console.log(`📨 ${req.method} ${req.path}`);
+    next();
+  });
+}
 
 // ============================================
 // Routes API
@@ -57,45 +101,32 @@ app.use('/api/cinema', cinemaRoutes);
 app.use('/api/boutique', boutiqueRoutes);
 app.use('/api/uploads', uploadsRoutes);
 app.use('/api/storyboard', storyboardRoutes);
+app.use('/api/partners', partnersRoutes);
 
 // Route de test
 app.get('/api', (req, res) => {
-  res.json({ 
+  res.json({
     success: true,
     message: 'API NAATAL Production',
-    version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth',
-      medias: '/api/medias',
-      messages: '/api/messages',
-      settings: '/api/settings',
-      comptabilite: '/api/comptabilite',
-      projets: '/api/projets',
-      attachments: '/api/attachments',
-      cinema: '/api/cinema',
-      boutique: '/api/boutique',
-      uploads: '/api/uploads',
-      storyboard: '/api/storyboard'
-    }
+    version: '1.0.0'
   });
 });
 
-// Route de santé
+// Route de sante
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT NOW()');
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       status: 'healthy',
       database: 'connected',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       status: 'unhealthy',
-      database: 'disconnected',
-      error: error.message
+      database: 'disconnected'
     });
   }
 });
@@ -108,14 +139,16 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error('❌ Erreur:', err);
+  if (!isProduction) {
+    console.error('❌ Erreur:', err);
+  }
   res.status(500).json({ success: false, error: 'Erreur serveur interne' });
 });
 
 // ============================================
-// Démarrage du serveur
+// Graceful shutdown
 // ============================================
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log('');
   console.log('╔════════════════════════════════════════════╗');
   console.log('║                                            ║');
@@ -127,6 +160,26 @@ app.listen(PORT, () => {
   console.log('║  🔒 Mode: ' + (process.env.NODE_ENV || 'development').padEnd(27) + '  ║');
   console.log('╚════════════════════════════════════════════╝');
   console.log('');
+});
+
+const gracefulShutdown = (signal) => {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+  server.close(async () => {
+    try {
+      await pool.end();
+      console.log('Database pool closed.');
+    } catch (err) {
+      // silent
+    }
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('unhandledRejection', (reason) => {
+  if (!isProduction) console.error('Unhandled Rejection:', reason);
 });
 
 module.exports = app;

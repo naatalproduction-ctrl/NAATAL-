@@ -85,22 +85,6 @@ export default function Hero() {
             </motion.button>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="hero-stats">
-            <div className="hero-stat">
-              <span className="hero-stat-value">50+</span>
-              <span className="hero-stat-label">Projets</span>
-            </div>
-            <div className="hero-stat-divider"></div>
-            <div className="hero-stat">
-              <span className="hero-stat-value">4</span>
-              <span className="hero-stat-label">Expertises</span>
-            </div>
-            <div className="hero-stat-divider"></div>
-            <div className="hero-stat">
-              <span className="hero-stat-value">CI</span>
-              <span className="hero-stat-label">Abidjan</span>
-            </div>
-          </motion.div>
         </motion.div>
 
         <motion.div 

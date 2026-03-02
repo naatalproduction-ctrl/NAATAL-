@@ -13,7 +13,7 @@ const getAllCinemaItems = async (req, res) => {
     res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Erreur getAllCinemaItems:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -30,7 +30,7 @@ const getCinemaItemById = async (req, res) => {
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Erreur getCinemaItemById:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -53,7 +53,7 @@ const createCinemaItem = async (req, res) => {
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Erreur createCinemaItem:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -93,7 +93,7 @@ const updateCinemaItem = async (req, res) => {
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Erreur updateCinemaItem:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -110,7 +110,7 @@ const deleteCinemaItem = async (req, res) => {
     res.json({ success: true, message: 'Film supprimé' });
   } catch (error) {
     console.error('Erreur deleteCinemaItem:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 
@@ -125,7 +125,7 @@ const getPublishedCinemaItems = async (req, res) => {
     res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Erreur getPublishedCinemaItems:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 };
 

@@ -88,6 +88,93 @@ CREATE TABLE IF NOT EXISTS admins (
 );
 
 -- ============================================
+-- TABLE: boutique_items
+-- ============================================
+CREATE TABLE IF NOT EXISTS boutique_items (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    price DECIMAL(10,2),
+    currency VARCHAR(10) DEFAULT 'EUR',
+    description TEXT,
+    features JSONB DEFAULT '[]',
+    image_url TEXT,
+    purchase_url TEXT,
+    color VARCHAR(50) DEFAULT 'rgba(107, 174, 255, 0.2)',
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- TABLE: transactions (comptabilité)
+-- ============================================
+CREATE TABLE IF NOT EXISTS transactions (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('revenu', 'depense')),
+    category VARCHAR(100) NOT NULL,
+    description TEXT,
+    amount DECIMAL(12,2) NOT NULL,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    client VARCHAR(255),
+    project VARCHAR(255),
+    payment_method VARCHAR(50),
+    reference VARCHAR(100),
+    notes TEXT,
+    payment_type VARCHAR(20) DEFAULT 'comptant',
+    total_project DECIMAL(12,2),
+    acompte_number INT DEFAULT 1,
+    total_acomptes INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- TABLE: projets
+-- ============================================
+CREATE TABLE IF NOT EXISTS projets (
+    id SERIAL PRIMARY KEY,
+    titre VARCHAR(255) NOT NULL,
+    type VARCHAR(50) DEFAULT 'film',
+    statut VARCHAR(50) DEFAULT 'en_developpement',
+    synopsis TEXT,
+    logline TEXT,
+    genre VARCHAR(100),
+    duree_prevue VARCHAR(50),
+    format VARCHAR(50),
+    langue VARCHAR(50) DEFAULT 'Français',
+    realisateur VARCHAR(255),
+    producteur VARCHAR(255),
+    scenariste VARCHAR(255),
+    directeur_photo VARCHAR(255),
+    casting TEXT,
+    client VARCHAR(255),
+    production VARCHAR(255) DEFAULT 'NAATAL Production',
+    date_debut DATE,
+    date_fin_prevue DATE,
+    budget_prevu DECIMAL(12,2),
+    notes TEXT,
+    priorite INT DEFAULT 3,
+    progression INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- TABLE: attachments (pièces jointes)
+-- ============================================
+CREATE TABLE IF NOT EXISTS attachments (
+    id SERIAL PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size INT,
+    mime_type VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
 -- INDEX pour performances
 -- ============================================
 CREATE INDEX IF NOT EXISTS idx_medias_category ON medias(category_id);
@@ -110,14 +197,9 @@ ON CONFLICT (slug) DO NOTHING;
 INSERT INTO medias (name, description, type, url, category_id, featured, display_order) VALUES
 -- Documentaires
 ('Documentaire - Les Racines', 'Un voyage au coeur des traditions africaines', 'youtube', 'https://www.youtube.com/embed/P4MzYbSNYEI', 1, true, 1),
-('Documentaire - Horizons', 'Exploration des paysages ivoiriens', 'youtube', 'https://www.youtube.com/embed/dQw4w9WgXcQ', 1, false, 2),
 -- Corporate
 ('MAS & HITACHI', 'Film institutionnel pour MAS & HITACHI', 'youtube', 'https://www.youtube.com/embed/ldC0Da_dF3E', 2, true, 1),
-('Cosy Home', 'Présentation de la marque Cosy Home', 'youtube', 'https://www.youtube.com/embed/Xnahc3dyxI8', 2, true, 2),
-('Groupe Azalai', 'Film corporate pour le Groupe Azalai', 'youtube', 'https://www.youtube.com/embed/example3', 2, false, 3),
--- Publicité
-('Spot TV - Orange CI', 'Campagne publicitaire Orange Côte d''Ivoire', 'youtube', 'https://www.youtube.com/embed/example4', 3, true, 1),
-('Pub - Solibra', 'Spot publicitaire pour Solibra', 'youtube', 'https://www.youtube.com/embed/example5', 3, false, 2)
+('Cosy Home', 'Présentation de la marque Cosy Home', 'youtube', 'https://www.youtube.com/embed/Xnahc3dyxI8', 2, true, 2)
 ON CONFLICT DO NOTHING;
 
 -- Paramètres du site
@@ -215,6 +297,50 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 DROP TRIGGER IF EXISTS update_storyboard_elements_updated_at ON storyboard_elements;
 CREATE TRIGGER update_storyboard_elements_updated_at BEFORE UPDATE ON storyboard_elements
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- TABLE: cinema_items
+-- Films et productions cinematographiques
+-- ============================================
+CREATE TABLE IF NOT EXISTS cinema_items (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    year INT,
+    director VARCHAR(255),
+    genre VARCHAR(100),
+    duration VARCHAR(20),
+    description TEXT,
+    video_url TEXT,
+    poster_url TEXT,
+    trailer_url TEXT,
+    cover_url TEXT,
+    status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_cinema_status ON cinema_items(status);
+
+DROP TRIGGER IF EXISTS update_cinema_items_updated_at ON cinema_items;
+CREATE TRIGGER update_cinema_items_updated_at BEFORE UPDATE ON cinema_items
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- TABLE: partners
+-- Logos des partenaires
+-- ============================================
+CREATE TABLE IF NOT EXISTS partners (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    logo_url TEXT NOT NULL,
+    website_url TEXT,
+    display_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_partners_active ON partners(is_active);
 
 -- ============================================
 -- FIN DU SCRIPT
