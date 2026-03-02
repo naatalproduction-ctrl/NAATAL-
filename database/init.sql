@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     total_project DECIMAL(12,2),
     acompte_number INT DEFAULT 1,
     total_acomptes INT DEFAULT 1,
+    created_by INT REFERENCES admins(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
