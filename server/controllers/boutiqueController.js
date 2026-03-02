@@ -47,7 +47,7 @@ const createBoutiqueItem = async (req, res) => {
       (name, price, currency, description, features, image_url, purchase_url, color, status, display_order)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
-    `, [name, price, currency || 'EUR', description, features || [], image_url, purchase_url, color, status || 'active', display_order || 0]);
+    `, [name, price, currency || 'EUR', description, JSON.stringify(features || []), image_url, purchase_url, color, status || 'active', display_order || 0]);
     
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
@@ -80,7 +80,7 @@ const updateBoutiqueItem = async (req, res) => {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $11
       RETURNING *
-    `, [name, price, currency, description, features, image_url, purchase_url, color, status, display_order, id]);
+    `, [name, price, currency, description, features ? JSON.stringify(features) : null, image_url, purchase_url, color, status, display_order, id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Produit non trouvé' });
