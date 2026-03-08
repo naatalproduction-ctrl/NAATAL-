@@ -198,16 +198,22 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
+  gap: 8px;
+}
+
+.mobile-nav > div {
+  width: 100%;
+  text-align: center;
 }
 
 .mobile-nav-link {
+  display: block;
   font-size: 22px;
   font-weight: 400;
   color: var(--color-accent-light, #c9a84c);
   text-decoration: none;
   letter-spacing: 2px;
-  padding: 18px 32px;
+  padding: 14px 32px;
   transition: all 0.3s ease;
   text-align: center;
   background: none;

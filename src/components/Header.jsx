@@ -45,12 +45,10 @@ export default function Header() {
   const menuItems = [
     { label: 'Accueil', href: '#hero', type: 'anchor' },
     { label: 'Audiovisuel', href: '#audiovisuel', type: 'anchor' },
-    { label: 'Cinéma', href: '/cinema', type: 'route', hidden: isCinemaPage },
-    { label: 'Boutique', href: '/boutique', type: 'route', hidden: isBoutiquePage },
+    { label: 'Cinéma', href: '/cinema', type: 'route' },
+    { label: 'Boutique', href: '/boutique', type: 'route' },
     { label: 'Contact', href: '#contact', type: 'anchor' }
   ]
-
-  const visibleItems = menuItems.filter(item => !item.hidden)
 
   return (
     <>
@@ -65,7 +63,7 @@ export default function Header() {
           {/* Desktop nav */}
           {!isMobile && (
             <nav className="nav">
-              {visibleItems.map((item, index) => (
+              {menuItems.map((item, index) => (
                 item.type === 'route' ? (
                   <Link key={index} to={item.href} className="nav-link">
                     {item.label}
@@ -107,7 +105,7 @@ export default function Header() {
             transition={{ duration: 0.3 }}
           >
             <nav className="mobile-nav">
-              {visibleItems.map((item, index) => (
+              {menuItems.map((item, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
