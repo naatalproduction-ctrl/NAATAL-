@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import './Header.css'
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
   const location = useLocation()
+  const navigate = useNavigate()
+  const isHomePage = location.pathname === '/'
   const isBoutiquePage = location.pathname === '/boutique'
   const isCinemaPage = location.pathname === '/cinema'
 
@@ -30,73 +32,71 @@ export default function Header() {
     return () => { document.body.style.overflow = '' }
   }, [isOpen])
 
+  const handleAnchorClick = (anchor) => {
+    setIsOpen(false)
+    if (isHomePage) {
+      const el = document.querySelector(anchor)
+      if (el) el.scrollIntoView({ behavior: 'smooth' })
+    } else {
+      navigate('/' + anchor)
+    }
+  }
+
   const menuItems = [
-    { label: 'Accueil', href: '#hero' },
-    { label: 'Audiovisuel', href: '#audiovisuel' },
-    { label: 'Cinéma', href: '/cinema', isRoute: true },
-    { label: 'Boutique', href: '/boutique', isRoute: true },
-    { label: 'Contact', href: '#contact' }
+    { label: 'Accueil', href: '#hero', type: 'anchor' },
+    { label: 'Audiovisuel', href: '#audiovisuel', type: 'anchor' },
+    { label: 'Cinéma', href: '/cinema', type: 'route', hidden: isCinemaPage },
+    { label: 'Boutique', href: '/boutique', type: 'route', hidden: isBoutiquePage },
+    { label: 'Contact', href: '#contact', type: 'anchor' }
   ]
 
-  const handleBackClick = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  const visibleItems = menuItems.filter(item => !item.hidden)
 
   return (
     <>
       <header className="header">
         <div className="header-content">
-           {!isBoutiquePage && !isCinemaPage && (
-             <div className="logo">
-               <img src="/img/logo.png" alt="NAATAL Logo" className="logo-image" />
-             </div>
-           )}
+          <div className="logo">
+            <Link to="/" onClick={() => { setIsOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+              <img src="/img/logo.png" alt="NAATAL Logo" className="logo-image" />
+            </Link>
+          </div>
 
-           {/* Desktop nav only */}
-           {!isMobile && !isBoutiquePage && !isCinemaPage && (
-             <nav className="nav">
-               {menuItems.map((item, index) => (
-                 item.isRoute ? (
-                   <Link key={index} to={item.href} className="nav-link">
-                     {item.label}
-                   </Link>
-                 ) : (
-                   <a key={index} href={item.href} className="nav-link">
-                     {item.label}
-                   </a>
-                 )
-               ))}
-             </nav>
-           )}
+          {/* Desktop nav */}
+          {!isMobile && (
+            <nav className="nav">
+              {visibleItems.map((item, index) => (
+                item.type === 'route' ? (
+                  <Link key={index} to={item.href} className="nav-link">
+                    {item.label}
+                  </Link>
+                ) : (
+                  <button
+                    key={index}
+                    className="nav-link nav-link-btn"
+                    onClick={() => handleAnchorClick(item.href)}
+                  >
+                    {item.label}
+                  </button>
+                )
+              ))}
+            </nav>
+          )}
 
-           {(isBoutiquePage || isCinemaPage) && (
-             <Link to="/" className="back-link" onClick={handleBackClick}>
-               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                 <path d="M19 12H5m7-7l-7 7 7 7"/>
-               </svg>
-               <span>Retour</span>
-             </Link>
-           )}
-
-           <div className="hidden-links">
-             <Link to="/boutique" className="hidden-link" aria-label="Boutique">Boutique</Link>
-             <Link to="/cinema" className="hidden-link" aria-label="Cinéma">Cinéma</Link>
-           </div>
-
-           {isMobile && (
-             <button
-               className={`hamburger ${isOpen ? 'active' : ''}`}
-               onClick={() => setIsOpen(!isOpen)}
-             >
-               <span></span>
-               <span></span>
-               <span></span>
-             </button>
-           )}
+          {isMobile && (
+            <button
+              className={`hamburger ${isOpen ? 'active' : ''}`}
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Mobile menu overlay - separate from header */}
+      {/* Mobile menu overlay */}
       <AnimatePresence>
         {isOpen && isMobile && (
           <motion.div
@@ -107,14 +107,14 @@ export default function Header() {
             transition={{ duration: 0.3 }}
           >
             <nav className="mobile-nav">
-              {menuItems.map((item, index) => (
+              {visibleItems.map((item, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + index * 0.07 }}
                 >
-                  {item.isRoute ? (
+                  {item.type === 'route' ? (
                     <Link
                       to={item.href}
                       className="mobile-nav-link"
@@ -123,13 +123,12 @@ export default function Header() {
                       {item.label}
                     </Link>
                   ) : (
-                    <a
-                      href={item.href}
-                      className="mobile-nav-link"
-                      onClick={() => setIsOpen(false)}
+                    <button
+                      className="mobile-nav-link mobile-nav-link-btn"
+                      onClick={() => handleAnchorClick(item.href)}
                     >
                       {item.label}
-                    </a>
+                    </button>
                   )}
                 </motion.div>
               ))}
