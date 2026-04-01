@@ -197,29 +197,51 @@
 .mobile-nav {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  align-items: stretch;
+  gap: 0;
+  width: 70%;
 }
 
 .mobile-nav > div {
-  width: 100%;
-  text-align: center;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+}
+
+.mobile-nav > div:last-child {
+  border-bottom: none;
 }
 
 .mobile-nav-link {
-  display: block;
-  font-size: 22px;
-  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 300;
   color: var(--color-accent-light, #c9a84c);
   text-decoration: none;
-  letter-spacing: 2px;
-  padding: 14px 32px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 18px 0;
   transition: all 0.3s ease;
-  text-align: center;
+  text-align: left;
   background: none;
   border: none;
   cursor: pointer;
   font-family: inherit;
+  width: 100%;
+}
+
+.mobile-nav-link::before {
+  content: '';
+  width: 0;
+  height: 1px;
+  background: var(--color-accent-light, #c9a84c);
+  transition: width 0.3s ease;
+  flex-shrink: 0;
+}
+
+.mobile-nav-link:hover::before,
+.mobile-nav-link:active::before {
+  width: 24px;
 }
 
 .mobile-nav-link-btn {
@@ -229,6 +251,7 @@
 .mobile-nav-link:hover,
 .mobile-nav-link:active {
   color: #fff;
+  padding-left: 4px;
 }
 
 /* ---- Mobile ---- */

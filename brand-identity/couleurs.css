@@ -1,0 +1,47 @@
+/* ========================================
+   NAATAL STUDIO — Palette de couleurs officielle
+   Reference pour tous les supports
+   ======================================== */
+
+:root {
+  /* === COULEURS PRINCIPALES === */
+  --naatal-noir-profond: #060606;
+  --naatal-noir-pur: #000000;
+  --naatal-or: #c9a84c;
+  --naatal-or-clair: #e8c96d;
+  --naatal-jaune-marque: #FFD700;
+  --naatal-blanc: #ffffff;
+  --naatal-blanc-attenue: #f0f0f0;
+
+  /* === COULEURS SECONDAIRES === */
+  --naatal-texte-secondaire: rgba(240, 240, 240, 0.6);
+  --naatal-texte-discret: rgba(240, 240, 240, 0.35);
+  --naatal-surface: rgba(255, 255, 255, 0.03);
+  --naatal-surface-hover: rgba(255, 255, 255, 0.06);
+  --naatal-bordure: rgba(255, 255, 255, 0.08);
+  --naatal-bordure-hover: rgba(255, 255, 255, 0.15);
+  --naatal-or-attenue: rgba(201, 168, 76, 0.15);
+  --naatal-or-glow: rgba(201, 168, 76, 0.25);
+
+  /* === COULEURS FONCTIONNELLES === */
+  --naatal-whatsapp: #25D366;
+  --naatal-erreur: #ff6b6b;
+  --naatal-succes: #4ecdc4;
+}
+
+/* === DEGRADES SIGNATURE === */
+.naatal-gradient-card {
+  background: linear-gradient(165deg, rgba(20, 20, 20, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%);
+}
+
+.naatal-gradient-card-hover {
+  background: linear-gradient(165deg, rgba(25, 22, 15, 0.98) 0%, rgba(12, 12, 10, 0.98) 100%);
+}
+
+.naatal-gradient-cta {
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.15) 0%, rgba(201, 168, 76, 0.05) 100%);
+}
+
+.naatal-gradient-overlay {
+  background: linear-gradient(to bottom, #060606 0%, rgba(6, 6, 6, 0.92) 30%, rgba(6, 6, 6, 0.92) 70%, #060606 100%);
+}

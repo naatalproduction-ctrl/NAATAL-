@@ -909,6 +909,11 @@
   position: relative;
 }
 
+/* Attach overlay (mobile backdrop) */
+.sb-attach-overlay {
+  display: none;
+}
+
 /* Attach dropdown menu */
 .sb-attach-menu {
   position: absolute;
@@ -921,6 +926,10 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
   z-index: 200;
   animation: sb-menu-appear 0.15s ease;
+}
+
+.sb-attach-header {
+  display: none;
 }
 
 @keyframes sb-menu-appear {
@@ -2445,5 +2454,384 @@
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 12px;
     padding: 4px 12px 16px;
+  }
+}
+
+/* ========================================
+   MOBILE TOUCH SUPPORT
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Canvas container: prevent browser gestures */
+  .storyboard-canvas-wrapper {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Canvas: prevent text selection during touch drag */
+  .storyboard-canvas {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Canvas full height on mobile */
+  .storyboard-canvas-wrapper {
+    height: calc(100vh - 130px);
+    min-height: 350px;
+  }
+
+  /* Toolbar: scrollable horizontally on mobile */
+  .sb-toolbar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding: 4px 6px;
+    gap: 2px;
+    scrollbar-width: none;
+  }
+
+  .sb-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sb-toolbar-dark .sb-tool-btn {
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .sb-tool-btn {
+    touch-action: manipulation;
+  }
+
+  .sb-action-btn,
+  .sb-pill-btn,
+  .sb-zoom-btn,
+  .sb-shape-btn {
+    touch-action: manipulation;
+  }
+
+  /* Sub toolbar (shapes): horizontal scroll on mobile */
+  .sb-sub-toolbar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding: 6px 10px;
+    scrollbar-width: none;
+  }
+
+  .sb-sub-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sb-sub-toolbar .sb-shape-btn {
+    flex-shrink: 0;
+  }
+
+  /* Make resize handles larger for touch (16px instead of 10px) */
+  .sb-handle {
+    width: 16px;
+    height: 16px;
+  }
+
+  .sb-handle-nw { top: -9px; left: -9px; }
+  .sb-handle-ne { top: -9px; right: -9px; }
+  .sb-handle-sw { bottom: -9px; left: -9px; }
+  .sb-handle-se { bottom: -9px; right: -9px; }
+  .sb-handle-n { top: -9px; }
+  .sb-handle-s { bottom: -9px; }
+  .sb-handle-e { right: -9px; }
+  .sb-handle-w { left: -9px; }
+
+  /* Connector endpoints larger for touch */
+  .sb-connector-endpoint {
+    r: 8;
+  }
+
+  .sb-connector-control-point {
+    r: 8;
+  }
+
+  /* Element options popover: position at bottom of screen on mobile */
+  .sb-text-options {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    transform: none;
+    border-radius: 16px 16px 0 0;
+    z-index: 2000;
+    padding: 12px 16px;
+    background: rgba(50, 50, 50, 0.97);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+    max-width: none;
+    width: 100%;
+  }
+
+  .sb-text-opt-group {
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Link floating bar: fixed at bottom */
+  .sb-link-floating-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    transform: none;
+    border-radius: 16px 16px 0 0;
+    z-index: 2000;
+    padding: 12px 16px;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  /* Context menu: fixed at bottom on mobile */
+  /* ---- Attach menu: bottom sheet on mobile ---- */
+  .sb-attach-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+  }
+
+  .sb-attach-menu {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    min-width: unset !important;
+    width: 100% !important;
+    border-radius: 16px 16px 0 0;
+    padding: 8px 0 env(safe-area-inset-bottom, 16px);
+    z-index: 10000;
+    background: #2c2c2e;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+    animation: slideUpMenu 0.25s ease;
+  }
+
+  .sb-attach-header {
+    display: block;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 20px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 4px;
+  }
+
+  .sb-attach-item {
+    font-size: 17px;
+    padding: 16px 20px;
+    border-radius: 0;
+    gap: 14px;
+  }
+
+  .sb-attach-item svg {
+    width: 22px;
+    height: 22px;
+    opacity: 1;
+  }
+
+  .sb-attach-item:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* ---- Context menu: compact popup on mobile ---- */
+  .sb-context-menu {
+    border-radius: 14px;
+    min-width: 180px;
+    max-width: 220px;
+    z-index: 10002;
+    background: rgba(30, 30, 32, 0.96);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+    animation: sb-ctx-appear 0.15s ease;
+    padding: 5px;
+  }
+
+  .sb-context-menu button,
+  .sb-context-menu .sb-ctx-item {
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: #ffffff;
+    gap: 10px;
+  }
+
+  .sb-context-menu button svg {
+    width: 16px;
+    height: 16px;
+    stroke: #ffffff;
+  }
+
+  .sb-context-menu button:disabled {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .sb-context-menu button:disabled svg {
+    stroke: rgba(255, 255, 255, 0.3);
+  }
+
+  .sb-context-menu button:active,
+  .sb-context-menu .sb-ctx-item:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .sb-context-menu .sb-ctx-danger,
+  .sb-context-menu .sb-context-danger {
+    color: #ff453a;
+  }
+
+  .sb-context-menu .sb-ctx-danger svg,
+  .sb-context-menu .sb-context-danger svg {
+    stroke: #ff453a;
+  }
+
+  .sb-ctx-divider,
+  .sb-context-divider {
+    margin: 3px 8px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  @keyframes slideUpMenu {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  /* Topbar: responsive wrapping */
+  .sb-topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .sb-topbar-left { order: 1; }
+  .sb-topbar-right { order: 2; }
+  .sb-topbar-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    position: relative;
+    left: auto;
+    transform: none;
+  }
+
+  /* Zoom controls: smaller but visible on mobile */
+  .sb-zoom-controls {
+    display: flex;
+    gap: 2px;
+  }
+
+  .sb-zoom-btn {
+    min-width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .sb-zoom-label {
+    font-size: 11px;
+    min-width: 36px;
+  }
+
+  /* Actions pill: compact */
+  .sb-actions-pill {
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .sb-pill-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Action buttons: compact */
+  .sb-action-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .sb-action-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Scrollbars: hide on mobile (touch scrolling instead) */
+  .sb-scrollbar {
+    display: none;
+  }
+
+  /* Empty state: smaller on mobile */
+  .sb-empty-state h3 {
+    font-size: 16px;
+  }
+
+  .sb-empty-state p {
+    font-size: 12px;
+    max-width: 280px;
+  }
+
+  .sb-empty-icon svg {
+    width: 60px;
+    height: 60px;
+  }
+
+  /* Link modal: full-width on mobile */
+  .sb-link-modal {
+    width: calc(100vw - 32px);
+    max-width: none;
+    margin: 0 16px;
+  }
+
+  /* Font/size menus: full-width at bottom */
+  .sb-font-menu {
+    position: fixed;
+    bottom: 60px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: 50vh;
+    z-index: 2001;
+  }
+
+  .sb-size-menu {
+    position: fixed;
+    bottom: 60px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: 50vh;
+    z-index: 2001;
+  }
+}
+
+/* Editor embedded: ensure touch works on fullscreen overlay */
+@media (max-width: 768px) {
+  .sb-editor-embedded {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .sb-editor-embedded .storyboard-canvas-wrapper {
+    height: calc(100vh - 120px);
+    height: calc(100dvh - 120px);
   }
 }

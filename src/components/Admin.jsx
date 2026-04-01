@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useSite } from '../context/SiteContext'
-import { usersAPI, comptabiliteAPI, projetsAPI, attachmentsAPI, cinemaAPI, boutiqueAPI, uploadsAPI, storyboardAPI, partnersAPI } from '../services/api'
+import { usersAPI, comptabiliteAPI, projetsAPI, attachmentsAPI, cinemaAPI, boutiqueAPI, uploadsAPI, storyboardAPI, partnersAPI, prestationsAPI, offresAPI, tasksAPI, leadsAPI, prospectsAPI } from '../services/api'
 import Storyboard from './Storyboard'
 import './Admin.css'
 
@@ -53,9 +53,9 @@ function AnimatedCounter({ value, duration = 800, prefix = '', suffix = '' }) {
 }
 
 export default function Admin() {
-  const { 
-    categories, 
-    messages, 
+  const {
+    medias,
+    messages,
     siteInfo,
     admin,
     login, 
@@ -71,21 +71,30 @@ export default function Admin() {
     loading
   } = useSite()
 
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTabState] = useState(() => {
+    return sessionStorage.getItem('naatal_admin_tab') || 'dashboard'
+  })
+  const setActiveTab = (tab) => {
+    sessionStorage.setItem('naatal_admin_tab', tab)
+    setActiveTabState(tab)
+  }
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [darkMode, setDarkMode] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState(new Date())
+  const [showNotifications, setShowNotifications] = useState(false)
   const [selectedMessage, setSelectedMessage] = useState(null)
   const [editingMedia, setEditingMedia] = useState(null)
   const [showAddMedia, setShowAddMedia] = useState(false)
-  const [addToCategory, setAddToCategory] = useState(null)
-  const [newMedia, setNewMedia] = useState({ 
-    name: '', 
-    type: 'youtube', 
-    url: '', 
+  const [newMedia, setNewMedia] = useState({
+    name: '',
+    type: 'youtube',
+    url: '',
     description: '',
-    category_id: null,
-    featured: false 
+    featured: false
   })
 
   // État pour la gestion des utilisateurs
@@ -222,6 +231,69 @@ export default function Admin() {
   const partnerLogoInputRef = useRef(null)
   const editPartnerLogoInputRef = useRef(null)
 
+  // État pour les prestations
+  const [prestationsItems, setPrestationsItems] = useState([])
+  const [showAddPrestation, setShowAddPrestation] = useState(false)
+  const [editingPrestation, setEditingPrestation] = useState(null)
+  const [newPrestation, setNewPrestation] = useState({
+    title: '',
+    description: '',
+    icon: 'video',
+    details: [],
+    image_url: '',
+    status: 'active',
+    display_order: 0
+  })
+  const [prestationError, setPrestationError] = useState('')
+  const [prestationSuccess, setPrestationSuccess] = useState('')
+  const [newDetail, setNewDetail] = useState('')
+
+  // État pour les offres
+  const [offresItems, setOffresItems] = useState([])
+  const [showAddOffre, setShowAddOffre] = useState(false)
+  const [editingOffre, setEditingOffre] = useState(null)
+  const [newOffre, setNewOffre] = useState({
+    name: '', type: 'package', target: '', description: '', price: 0,
+    period: '/ mois', features: [], not_included: [], cta: 'Choisir',
+    is_featured: false, status: 'active', display_order: 0
+  })
+  const [offreError, setOffreError] = useState('')
+  const [offreSuccess, setOffreSuccess] = useState('')
+  const [newOffreFeature, setNewOffreFeature] = useState('')
+
+  // État pour les tâches
+  const [tasks, setTasks] = useState([])
+  const [tasksStats, setTasksStats] = useState(null)
+  const [showAddTask, setShowAddTask] = useState(false)
+  const [editingTask, setEditingTask] = useState(null)
+  const [taskFilter, setTaskFilter] = useState('all')
+  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', due_date: '', assigned_to: '', category: '' })
+  const [taskError, setTaskError] = useState('')
+  const [taskSuccess, setTaskSuccess] = useState('')
+  const [draggedTask, setDraggedTask] = useState(null)
+  const [dragOverCol, setDragOverCol] = useState(null)
+
+  // État pour Leads Power
+  const [leads, setLeads] = useState([])
+  const [leadsStats, setLeadsStats] = useState(null)
+  const [showAddLead, setShowAddLead] = useState(false)
+  const [editingLead, setEditingLead] = useState(null)
+  const [leadFilter, setLeadFilter] = useState('all')
+  const [newLead, setNewLead] = useState({ name: '', email: '', phone: '', company: '', service: '', budget: '', message: '' })
+
+  // État pour Prospection
+  const [leadsSubTab, setLeadsSubTab] = useState('search')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchLocation, setSearchLocation] = useState('Abidjan')
+  const [searchLimit, setSearchLimit] = useState(10)
+  const [searchResults, setSearchResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const [searchType, setSearchType] = useState('maps')
+  const [selectedProspects, setSelectedProspects] = useState([])
+  const [prospects, setProspects] = useState([])
+  const [prospectsStats, setProspectsStats] = useState(null)
+  const [prospectFilter, setProspectFilter] = useState('all')
+
   // État pour les uploads de covers
   const [uploadingCover, setUploadingCover] = useState(false)
   const cinemaCoverInputRef = useRef(null)
@@ -351,7 +423,298 @@ export default function Admin() {
     }
   }, [isAuthenticated, activeTab])
 
+  // Charger les données Prestations
+  const fetchPrestationsData = async () => {
+    try {
+      const response = await prestationsAPI.getAll()
+      if (response.success) {
+        setPrestationsItems(response.data)
+      }
+    } catch (err) {
+      console.error('Erreur chargement prestations:', err)
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'prestations') {
+      fetchPrestationsData()
+    }
+  }, [isAuthenticated, activeTab])
+
+  // Charger les données Offres
+  const fetchOffresData = async () => {
+    try {
+      const response = await offresAPI.getAll()
+      if (response.success) setOffresItems(response.data)
+    } catch (err) {
+      console.error('Erreur chargement offres:', err)
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'offres') {
+      fetchOffresData()
+    }
+  }, [isAuthenticated, activeTab])
+
+  // Charger les données des tâches
+  const fetchTasksData = async () => {
+    try {
+      const [tasksRes, statsRes] = await Promise.all([
+        tasksAPI.getAll(),
+        tasksAPI.getStats()
+      ])
+      if (tasksRes.success) setTasks(tasksRes.data)
+      if (statsRes.success) setTasksStats(statsRes.data)
+    } catch (err) {
+      console.error('Erreur chargement taches:', err)
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'tasks') {
+      fetchTasksData()
+    }
+  }, [isAuthenticated, activeTab])
+
+  // Leads Power
+  const fetchLeadsData = async () => {
+    try {
+      const [leadsRes, statsRes] = await Promise.all([
+        leadsAPI.getAll(),
+        leadsAPI.getStats()
+      ])
+      if (leadsRes.success) setLeads(leadsRes.data)
+      if (statsRes.success) setLeadsStats(statsRes.data)
+    } catch (err) {
+      console.error('Erreur chargement leads:', err)
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'leads') {
+      fetchLeadsData()
+    }
+  }, [isAuthenticated, activeTab])
+
+  const handleCreateLead = async () => {
+    if (!newLead.name) return
+    const result = await leadsAPI.create(newLead)
+    if (result.success) {
+      setShowAddLead(false)
+      setNewLead({ name: '', email: '', phone: '', company: '', service: '', budget: '', message: '' })
+      fetchLeadsData()
+    }
+  }
+
+  const handleUpdateLead = async (id, data) => {
+    const result = await leadsAPI.update(id, data)
+    if (result.success) {
+      setEditingLead(null)
+      fetchLeadsData()
+    }
+  }
+
+  const handleDeleteLead = async (id) => {
+    if (window.confirm('Supprimer ce lead ?')) {
+      await leadsAPI.delete(id)
+      fetchLeadsData()
+    }
+  }
+
+  const getLeadStatusColor = (status) => {
+    switch (status) {
+      case 'nouveau': return '#3b82f6'
+      case 'contacte': return '#f59e0b'
+      case 'devis': return '#8b5cf6'
+      case 'converti': return '#22c55e'
+      case 'perdu': return '#ef4444'
+      default: return '#6b7280'
+    }
+  }
+
+  const getLeadStatusLabel = (status) => {
+    switch (status) {
+      case 'nouveau': return 'Nouveau'
+      case 'contacte': return 'Contacté'
+      case 'devis': return 'Devis envoyé'
+      case 'converti': return 'Converti'
+      case 'perdu': return 'Perdu'
+      default: return status
+    }
+  }
+
+  // Prospection
+  const handleSearch = async () => {
+    if (!searchQuery) return
+    setSearching(true)
+    try {
+      const searchFn = searchType === 'google' ? prospectsAPI.searchGoogle : prospectsAPI.search
+      const result = await searchFn({ searchQuery, location: searchLocation, limit: searchLimit })
+      if (result.success) {
+        setSearchResults(result.data)
+        setSelectedProspects([])
+      }
+    } catch (err) {
+      console.error('Erreur recherche:', err)
+    }
+    setSearching(false)
+  }
+
+  const fetchProspects = async () => {
+    try {
+      const [pRes, sRes] = await Promise.all([prospectsAPI.getAll(), prospectsAPI.getStats()])
+      if (pRes.success) setProspects(pRes.data)
+      if (sRes.success) setProspectsStats(sRes.data)
+    } catch (err) {
+      console.error('Erreur chargement prospects:', err)
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'leads' && leadsSubTab === 'prospects') {
+      fetchProspects()
+    }
+  }, [isAuthenticated, activeTab, leadsSubTab])
+
+  const handleSaveSelected = async () => {
+    const toSave = searchResults.filter((_, i) => selectedProspects.includes(i)).map(p => ({
+      ...p,
+      search_query: searchQuery,
+      location: searchLocation
+    }))
+    const result = await prospectsAPI.saveBulk(toSave)
+    if (result.success) {
+      setSelectedProspects([])
+      alert(`${result.count} prospect(s) sauvegardé(s)`)
+    }
+  }
+
+  const handleSaveAllResults = async () => {
+    const toSave = searchResults.map(p => ({ ...p, search_query: searchQuery, location: searchLocation }))
+    const result = await prospectsAPI.saveBulk(toSave)
+    if (result.success) {
+      alert(`${result.count} prospect(s) sauvegardé(s)`)
+    }
+  }
+
+  const handleConvertProspect = async (id) => {
+    const result = await prospectsAPI.convert(id)
+    if (result.success) {
+      fetchProspects()
+      fetchLeadsData()
+    }
+  }
+
+  const handleDeleteProspect = async (id) => {
+    if (window.confirm('Supprimer ce prospect ?')) {
+      await prospectsAPI.delete(id)
+      fetchProspects()
+    }
+  }
+
+  const toggleSelectProspect = (index) => {
+    setSelectedProspects(prev =>
+      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+    )
+  }
+
+  // Créer une tâche
+  const handleCreateTask = async () => {
+    setTaskError('')
+    setTaskSuccess('')
+
+    if (!newTask.title) {
+      setTaskError('Le titre est requis')
+      return
+    }
+
+    try {
+      const response = await tasksAPI.create(newTask)
+      if (response.success) {
+        setTaskSuccess('Tâche ajoutée avec succès')
+        setShowAddTask(false)
+        setNewTask({ title: '', description: '', priority: 'medium', due_date: '', assigned_to: '', category: '' })
+        fetchTasksData()
+        setTimeout(() => setTaskSuccess(''), 3000)
+      }
+    } catch (err) {
+      setTaskError(err.message || 'Erreur lors de l\'ajout')
+    }
+  }
+
+  // Modifier une tâche
+  const handleUpdateTask = async () => {
+    setTaskError('')
+    setTaskSuccess('')
+
+    if (!editingTask) return
+
+    try {
+      const response = await tasksAPI.update(editingTask.id, {
+        title: editingTask.title,
+        description: editingTask.description,
+        status: editingTask.status,
+        priority: editingTask.priority,
+        due_date: editingTask.due_date || null,
+        assigned_to: editingTask.assigned_to,
+        category: editingTask.category
+      })
+      if (response.success) {
+        setTaskSuccess('Tâche modifiée')
+        setEditingTask(null)
+        fetchTasksData()
+        setTimeout(() => setTaskSuccess(''), 3000)
+      }
+    } catch (err) {
+      setTaskError(err.message || 'Erreur lors de la modification')
+    }
+  }
+
+  // Supprimer une tâche
+  const handleDeleteTask = async (id) => {
+    if (!window.confirm('Supprimer cette tâche ?')) return
+
+    try {
+      const response = await tasksAPI.delete(id)
+      if (response.success) {
+        setTaskSuccess('Tâche supprimée')
+        fetchTasksData()
+        setTimeout(() => setTaskSuccess(''), 3000)
+      }
+    } catch (err) {
+      setTaskError(err.message || 'Erreur lors de la suppression')
+    }
+  }
+
+  // Changer le statut d'une tâche (cycle: todo -> in_progress -> done -> todo)
+  const handleToggleTaskStatus = async (task) => {
+    const statusCycle = { todo: 'in_progress', in_progress: 'done', done: 'todo' }
+    const newStatus = statusCycle[task.status]
+
+    try {
+      const response = await tasksAPI.update(task.id, { status: newStatus })
+      if (response.success) {
+        fetchTasksData()
+      }
+    } catch (err) {
+      console.error('Erreur changement statut:', err)
+    }
+  }
+
   // Créer une transaction
+  // Rafraîchir toutes les données du dashboard
+  const handleRefreshDashboard = async () => {
+    setRefreshing(true)
+    try {
+      await fetchMedias()
+      setLastUpdated(new Date())
+    } catch (err) {
+      console.error('Erreur refresh:', err)
+    }
+    setRefreshing(false)
+  }
+
   const handleCreateTransaction = async () => {
     setComptaError('')
     setComptaSuccess('')
@@ -835,6 +1198,151 @@ export default function Admin() {
     }
   }
 
+  // CRUD Prestations
+  const handleCreatePrestation = async () => {
+    setPrestationError('')
+    setPrestationSuccess('')
+
+    if (!newPrestation.title) {
+      setPrestationError('Le titre est requis')
+      return
+    }
+
+    try {
+      const response = await prestationsAPI.create(newPrestation)
+      if (response.success) {
+        setPrestationSuccess('Prestation ajoutée avec succès')
+        setShowAddPrestation(false)
+        setNewPrestation({ title: '', description: '', icon: 'video', details: [], image_url: '', status: 'active', display_order: 0 })
+        fetchPrestationsData()
+        setTimeout(() => setPrestationSuccess(''), 3000)
+      }
+    } catch (err) {
+      setPrestationError(err.message || 'Erreur lors de la création')
+    }
+  }
+
+  const handleUpdatePrestation = async () => {
+    if (!editingPrestation) return
+    setPrestationError('')
+
+    try {
+      const response = await prestationsAPI.update(editingPrestation.id, editingPrestation)
+      if (response.success) {
+        setPrestationSuccess('Prestation mise à jour')
+        setEditingPrestation(null)
+        fetchPrestationsData()
+        setTimeout(() => setPrestationSuccess(''), 3000)
+      }
+    } catch (err) {
+      setPrestationError(err.message || 'Erreur lors de la mise à jour')
+    }
+  }
+
+  const handleDeletePrestation = async (id) => {
+    if (!window.confirm('Supprimer cette prestation ? Cette action est irréversible.')) return
+
+    try {
+      const response = await prestationsAPI.delete(id)
+      if (response.success) {
+        setPrestationSuccess('Prestation supprimée')
+        fetchPrestationsData()
+        setTimeout(() => setPrestationSuccess(''), 3000)
+      }
+    } catch (err) {
+      setPrestationError(err.message || 'Erreur lors de la suppression')
+    }
+  }
+
+  const addDetail = (isEditing = false) => {
+    const detail = newDetail.trim()
+    if (!detail) return
+
+    if (isEditing && editingPrestation) {
+      const details = typeof editingPrestation.details === 'string'
+        ? JSON.parse(editingPrestation.details)
+        : editingPrestation.details || []
+      setEditingPrestation({ ...editingPrestation, details: [...details, detail] })
+    } else {
+      setNewPrestation({ ...newPrestation, details: [...newPrestation.details, detail] })
+    }
+    setNewDetail('')
+  }
+
+  const removeDetail = (index, isEditing = false) => {
+    if (isEditing && editingPrestation) {
+      const details = typeof editingPrestation.details === 'string'
+        ? JSON.parse(editingPrestation.details)
+        : editingPrestation.details || []
+      setEditingPrestation({ ...editingPrestation, details: details.filter((_, i) => i !== index) })
+    } else {
+      setNewPrestation({ ...newPrestation, details: newPrestation.details.filter((_, i) => i !== index) })
+    }
+  }
+
+  // CRUD Offres
+  const handleCreateOffre = async () => {
+    setOffreError(''); setOffreSuccess('')
+    if (!newOffre.name) { setOffreError('Le nom est requis'); return }
+    try {
+      const response = await offresAPI.create(newOffre)
+      if (response.success) {
+        setOffreSuccess('Offre ajoutee avec succes')
+        setShowAddOffre(false)
+        setNewOffre({ name: '', type: 'package', target: '', description: '', price: 0, period: '/ mois', features: [], not_included: [], cta: 'Choisir', is_featured: false, status: 'active', display_order: 0 })
+        fetchOffresData()
+        setTimeout(() => setOffreSuccess(''), 3000)
+      }
+    } catch (err) { setOffreError(err.message || 'Erreur lors de la creation') }
+  }
+
+  const handleUpdateOffre = async () => {
+    if (!editingOffre) return
+    setOffreError('')
+    try {
+      const response = await offresAPI.update(editingOffre.id, editingOffre)
+      if (response.success) {
+        setOffreSuccess('Offre mise a jour')
+        setEditingOffre(null)
+        fetchOffresData()
+        setTimeout(() => setOffreSuccess(''), 3000)
+      }
+    } catch (err) { setOffreError(err.message || 'Erreur lors de la mise a jour') }
+  }
+
+  const handleDeleteOffre = async (id) => {
+    if (!window.confirm('Supprimer cette offre ?')) return
+    try {
+      const response = await offresAPI.delete(id)
+      if (response.success) {
+        setOffreSuccess('Offre supprimee')
+        fetchOffresData()
+        setTimeout(() => setOffreSuccess(''), 3000)
+      }
+    } catch (err) { setOffreError(err.message || 'Erreur lors de la suppression') }
+  }
+
+  const addOffreFeature = (field, isEditing = false) => {
+    const val = newOffreFeature.trim()
+    if (!val) return
+    if (isEditing && editingOffre) {
+      const arr = typeof editingOffre[field] === 'string' ? JSON.parse(editingOffre[field]) : editingOffre[field] || []
+      setEditingOffre({ ...editingOffre, [field]: [...arr, val] })
+    } else {
+      setNewOffre({ ...newOffre, [field]: [...(newOffre[field] || []), val] })
+    }
+    setNewOffreFeature('')
+  }
+
+  const removeOffreFeature = (field, index, isEditing = false) => {
+    if (isEditing && editingOffre) {
+      const arr = typeof editingOffre[field] === 'string' ? JSON.parse(editingOffre[field]) : editingOffre[field] || []
+      setEditingOffre({ ...editingOffre, [field]: arr.filter((_, i) => i !== index) })
+    } else {
+      setNewOffre({ ...newOffre, [field]: (newOffre[field] || []).filter((_, i) => i !== index) })
+    }
+  }
+
   // CRUD Partenaires
   const handleCreatePartner = async () => {
     setPartnerError('')
@@ -1131,14 +1639,10 @@ export default function Admin() {
       alert('Veuillez remplir le nom et l\'URL')
       return
     }
-    const result = await addMedia({
-      ...newMedia,
-      category_id: addToCategory || newMedia.category_id
-    })
+    const result = await addMedia(newMedia)
     if (result.success) {
       setShowAddMedia(false)
-      setAddToCategory(null)
-      setNewMedia({ name: '', type: 'youtube', url: '', description: '', category_id: null, featured: false })
+      setNewMedia({ name: '', type: 'youtube', url: '', description: '', featured: false })
     }
   }
 
@@ -1398,19 +1902,29 @@ export default function Admin() {
         <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
       </svg>
+    ),
+    prestations: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+    ),
+    tasks: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+    ),
+    leads: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
     )
   }
 
   // Icône par catégorie
-  const getCategoryIcon = (iconName) => {
-    switch(iconName) {
-      case 'film': return icons.film
-      case 'briefcase': return icons.briefcase
-      case 'megaphone': return icons.megaphone
-      default: return icons.play
-    }
-  }
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -1492,24 +2006,36 @@ export default function Admin() {
   // PANEL ADMIN
   // ============================================
   const tabs = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: icons.dashboard },
+    { id: 'dashboard', label: 'Dashboard', icon: icons.dashboard },
     { id: 'projets', label: 'Projets', icon: icons.projets },
     { id: 'media', label: 'Médias', icon: icons.media },
     { id: 'cinema', label: 'Cinéma', icon: icons.cinema },
     { id: 'boutique', label: 'Boutique', icon: icons.boutique },
+    { id: 'prestations', label: 'Prestations', icon: icons.prestations },
+    { id: 'offres', label: 'Offres', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg> },
+    { id: 'tasks', label: 'Tâches', icon: icons.tasks },
     { id: 'messages', label: 'Messages', icon: icons.messages, badge: unreadCount },
     { id: 'comptabilite', label: 'Comptabilité', icon: icons.comptabilite },
     { id: 'storyboard', label: 'Storyboard', icon: icons.storyboard },
+    { id: 'leads', label: 'Leads Power', icon: icons.leads },
     { id: 'partners', label: 'Partenaires', icon: icons.partners },
     { id: 'settings', label: 'Paramètres', icon: icons.settings }
   ]
 
-  const totalMedias = categories.reduce((sum, cat) => sum + (cat.medias?.length || 0), 0)
+  const totalMedias = medias.length
 
   return (
     <div className="admin">
+      {/* Mobile hamburger */}
+      <button className="admin-hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        <span></span><span></span><span></span>
+      </button>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && <div className="admin-overlay" onClick={() => setSidebarOpen(false)}></div>}
+
       {/* Sidebar */}
-      <motion.aside className="admin-sidebar" initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
+      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="admin-logo">
           <motion.img src="/img/logo 3.png" alt="N PROD" className="logo-icon-img" whileHover={{ scale: 1.05 }} />
         </div>
@@ -1519,7 +2045,7 @@ export default function Admin() {
             <motion.button
               key={tab.id}
               className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -1536,15 +2062,28 @@ export default function Admin() {
           <Link to="/" className="view-site">{icons.eye}<span>Voir le site</span></Link>
           <button onClick={logout} className="logout-btn">{icons.logout}<span>Déconnexion</span></button>
         </div>
-      </motion.aside>
+      </aside>
 
       {/* Main Content */}
-      <main className="admin-main">
+      <main className={`admin-main ${darkMode ? '' : 'light-mode'}`}>
         <motion.header className="admin-header" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-          <h1>{tabs.find(t => t.id === activeTab)?.label}</h1>
-          <div className="admin-user">
-            <div className="user-avatar">{admin?.username?.[0]?.toUpperCase() || 'A'}</div>
-            <span>{admin?.username || 'Admin'}</span>
+          {activeTab !== 'dashboard' && <h1>{tabs.find(t => t.id === activeTab)?.label}</h1>}
+          {activeTab === 'dashboard' && <h1 className="header-spacer"></h1>}
+          <div className="admin-header-actions">
+            <button className="header-action-btn" onClick={() => setDarkMode(!darkMode)} title={darkMode ? 'Mode jour' : 'Mode nuit'}>
+              {darkMode ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              )}
+            </button>
+            <button className="header-action-btn notification-btn" onClick={() => { setShowNotifications(!showNotifications); if (unreadCount > 0) setActiveTab('messages'); }} title="Notifications">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+            </button>
+            <div className="admin-user">
+              <div className="user-avatar">{admin?.username?.[0]?.toUpperCase() || 'A'}</div>
+            </div>
           </div>
         </motion.header>
 
@@ -1556,38 +2095,244 @@ export default function Admin() {
             {/* ============================================ */}
             {activeTab === 'dashboard' && (
               <motion.div key="dashboard" {...pageTransition} className="dashboard">
+                {/* Hero Card */}
+                <motion.div className="dash-hero" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                  <div className="dash-hero-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  </div>
+                  <div className="dash-hero-info">
+                    <h2>Tableau de bord</h2>
+                    <p>{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  </div>
+                  <div className="dash-hero-refresh">
+                    <span className="refresh-status">
+                      <span className="refresh-dot"></span>
+                      Mis a jour {lastUpdated.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <button className={`refresh-btn ${refreshing ? 'spinning' : ''}`} onClick={handleRefreshDashboard} disabled={refreshing}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    </button>
+                  </div>
+                </motion.div>
+
+                {/* Stats rapides */}
                 <motion.div className="stats-grid" variants={containerVariants} initial="hidden" animate="visible">
                   {[
-                    { icon: icons.media, value: totalMedias, label: 'Médias', color: '#8b5cf6', onClick: () => setActiveTab('media') },
-                    { icon: icons.film, value: categories.find(c => c.slug === 'documentaire')?.medias?.length || 0, label: 'Documentaires', color: '#8b5cf6' },
-                    { icon: icons.briefcase, value: categories.find(c => c.slug === 'corporate')?.medias?.length || 0, label: 'Corporate', color: '#3b82f6' },
-                    { icon: icons.megaphone, value: categories.find(c => c.slug === 'publicite')?.medias?.length || 0, label: 'Publicités', color: '#ec4899' },
-                    { icon: icons.messages, value: messages.length, label: `Messages (${unreadCount} non lus)`, color: '#22c55e', onClick: () => setActiveTab('messages') },
-                    { icon: icons.globe, value: 'En ligne', label: 'Statut du site', color: '#22c55e' }
+                    { icon: icons.media, value: totalMedias, label: 'Medias', color: '#8b5cf6', onClick: () => setActiveTab('media') },
+                    { icon: icons.messages, value: messages.length, label: `Messages`, color: '#22c55e', onClick: () => setActiveTab('messages'), badge: unreadCount },
+                    { icon: icons.briefcase, value: totalMedias, label: 'Vidéos', color: '#3b82f6' },
+                    { icon: icons.globe, value: 'En ligne', label: 'Statut', color: '#22c55e' }
                   ].map((stat, index) => (
-                    <motion.div 
-                      key={index} 
-                      className="stat-card" 
-                      variants={itemVariants} 
-                      whileHover={{ y: -5 }} 
+                    <motion.div
+                      key={index}
+                      className="stat-card"
+                      variants={itemVariants}
+                      whileHover={{ y: -3 }}
                       onClick={stat.onClick}
                       style={{ cursor: stat.onClick ? 'pointer' : 'default' }}
                     >
-                      <div className="stat-icon" style={{ background: `${stat.color}15`, color: stat.color }}>{stat.icon}</div>
-                      <div className="stat-info"><h3>{stat.value}</h3><p>{stat.label}</p></div>
+                      <div className="stat-icon" style={{ background: `${stat.color}20`, color: stat.color }}>{stat.icon}</div>
+                      <div className="stat-info">
+                        <h3>{stat.value}</h3>
+                        <p>{stat.label}</p>
+                      </div>
+                      {stat.badge > 0 && <span className="stat-badge">{stat.badge}</span>}
                     </motion.div>
                   ))}
                 </motion.div>
 
-                <motion.div className="section-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                  <h3>Informations du site</h3>
-                  <ul className="info-list">
-                    <li><strong>Nom:</strong> {siteInfo.name || 'NAATAL Production'}</li>
-                    <li><strong>Email:</strong> {siteInfo.email || 'naatalproduction@gmail.com'}</li>
-                    <li><strong>Téléphone:</strong> {siteInfo.phone || '+225 07 19 95 65 86'}</li>
-                    <li><strong>Adresse:</strong> {siteInfo.address || 'Abidjan, Côte d\'Ivoire'}</li>
-                  </ul>
+                {/* Comptabilité avec filtres */}
+                <motion.div className="dash-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                  <div className="dash-section-header">
+                    <h3>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      Comptabilite
+                    </h3>
+                  </div>
+
+                  {/* Filtres de date */}
+                  <div className="dash-compta-filters">
+                    <div className="dash-filter-group">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <select value={comptaFilter.year} onChange={e => setComptaFilter({...comptaFilter, year: parseInt(e.target.value)})}>
+                        {[...Array(5)].map((_, i) => {
+                          const year = currentYear - 2 + i
+                          return <option key={year} value={year}>{year}</option>
+                        })}
+                      </select>
+                    </div>
+                    <div className="dash-month-pills">
+                      <button className={!comptaFilter.month ? 'active' : ''} onClick={() => setComptaFilter({...comptaFilter, month: ''})}>Annee</button>
+                      {['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => (
+                        <button key={i} className={comptaFilter.month === i + 1 ? 'active' : ''} onClick={() => setComptaFilter({...comptaFilter, month: i + 1})}>{m}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Cartes financières */}
+                  <div className="compta-cards">
+                    <div className="compta-card revenus">
+                      <div className="compta-card-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                        <span>Revenus</span>
+                      </div>
+                      <div className="compta-card-value">
+                        <AnimatedCounter value={comptaStats?.totals?.revenus || 0} duration={600} /> F
+                      </div>
+                      <div className="compta-card-sub">
+                        <AnimatedCounter value={comptaStats?.totals?.countRevenus || 0} duration={400} /> transactions
+                      </div>
+                    </div>
+                    <div className="compta-card depenses">
+                      <div className="compta-card-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                        <span>Depenses</span>
+                      </div>
+                      <div className="compta-card-value">
+                        <AnimatedCounter value={comptaStats?.totals?.depenses || 0} duration={600} /> F
+                      </div>
+                      <div className="compta-card-sub">
+                        <AnimatedCounter value={comptaStats?.totals?.countDepenses || 0} duration={400} /> transactions
+                      </div>
+                    </div>
+                    <div className="compta-card solde">
+                      <div className="compta-card-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        <span>Solde</span>
+                      </div>
+                      <div className="compta-card-value">
+                        <AnimatedCounter value={comptaStats?.totals?.balance || 0} duration={600} /> F
+                      </div>
+                      <div className="compta-card-sub">{comptaStats?.totals?.balance >= 0 ? 'Benefice' : 'Deficit'}</div>
+                    </div>
+                  </div>
+                  <div className="compta-card projets-count dash-full-card">
+                    <div className="compta-card-header">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                      <span>Projets</span>
+                    </div>
+                    <div className="compta-card-value">
+                      <AnimatedCounter value={projetsStats?.total || 0} duration={400} />
+                    </div>
+                    <div className="compta-card-sub">{projetsStats?.enProduction || 0} en production</div>
+                  </div>
                 </motion.div>
+
+                {/* Messages récents */}
+                {unreadCount > 0 && (
+                  <motion.div className="dash-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <div className="dash-section-header">
+                      <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        Messages non lus
+                      </h3>
+                    </div>
+                    <div className="dash-messages">
+                      {messages.filter(m => !m.is_read).slice(0, 3).map(msg => (
+                        <div key={msg.id} className="dash-message" onClick={() => { setActiveTab('messages'); setSelectedMessage(msg); }}>
+                          <div className="dash-msg-avatar">{msg.name?.[0]?.toUpperCase()}</div>
+                          <div className="dash-msg-content">
+                            <strong>{msg.name}</strong>
+                            <p>{msg.message?.substring(0, 60)}...</p>
+                          </div>
+                          <span className="dash-msg-time">{new Date(msg.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Boutique */}
+                {boutiqueItems.length > 0 && (
+                  <motion.div className="dash-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+                    <div className="dash-section-header">
+                      <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                        Boutique
+                      </h3>
+                    </div>
+                    <div className="dash-boutique-stats">
+                      <div className="dash-boutique-count">
+                        <span className="dash-boutique-number">{boutiqueItems.filter(i => i.status === 'active').length}</span>
+                        <span className="dash-boutique-label">articles en ligne</span>
+                      </div>
+                      <div className="dash-boutique-count">
+                        <span className="dash-boutique-number">{boutiqueItems.length}</span>
+                        <span className="dash-boutique-label">total articles</span>
+                      </div>
+                    </div>
+                    <div className="dash-boutique-grid">
+                      {boutiqueItems.filter(i => i.status === 'active').slice(0, 4).map(item => (
+                        <div key={item.id} className="dash-boutique-item" onClick={() => setActiveTab('boutique')}>
+                          {item.image_url ? (
+                            <img src={item.image_url} alt={item.name} className="dash-boutique-img" />
+                          ) : (
+                            <div className="dash-boutique-placeholder">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                            </div>
+                          )}
+                          <div className="dash-boutique-info">
+                            <strong>{item.name}</strong>
+                            <span>{item.price ? `${Number(item.price).toLocaleString()} ${item.currency || 'EUR'}` : ''}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Tâches */}
+                {tasksStats && (tasksStats.total > 0 || true) && (
+                  <motion.div className="dash-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                    <div className="dash-section-header">
+                      <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        Tâches
+                      </h3>
+                      <button className="dash-section-link" onClick={() => setActiveTab('tasks')}>Voir tout</button>
+                    </div>
+                    <div className="dash-tasks-stats">
+                      <div className="dash-task-stat">
+                        <span className="dash-task-stat-number">{tasksStats?.todo || 0}</span>
+                        <span className="dash-task-stat-label">A faire</span>
+                      </div>
+                      <div className="dash-task-stat">
+                        <span className="dash-task-stat-number in-progress">{tasksStats?.in_progress || 0}</span>
+                        <span className="dash-task-stat-label">En cours</span>
+                      </div>
+                      <div className="dash-task-stat">
+                        <span className="dash-task-stat-number done">{tasksStats?.done || 0}</span>
+                        <span className="dash-task-stat-label">Termine</span>
+                      </div>
+                      {tasksStats?.overdue > 0 && (
+                        <div className="dash-task-stat">
+                          <span className="dash-task-stat-number overdue">{tasksStats.overdue}</span>
+                          <span className="dash-task-stat-label">En retard</span>
+                        </div>
+                      )}
+                    </div>
+                    {tasksStats?.recent?.length > 0 && (
+                      <div className="dash-tasks-recent">
+                        {tasksStats.recent.map(task => (
+                          <div key={task.id} className="dash-task-item" onClick={() => setActiveTab('tasks')}>
+                            <div className={`dash-task-checkbox ${task.status}`}>
+                              {task.status === 'done' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>}
+                              {task.status === 'in_progress' && <div className="dash-task-progress-dot"></div>}
+                            </div>
+                            <div className="dash-task-info">
+                              <span className={`dash-task-title ${task.status === 'done' ? 'done' : ''}`}>{task.title}</span>
+                              <div className="dash-task-meta">
+                                <span className={`task-priority ${task.priority}`}>{task.priority === 'urgent' ? 'Urgent' : task.priority === 'high' ? 'Haute' : task.priority === 'medium' ? 'Moyenne' : 'Basse'}</span>
+                                {task.due_date && <span className={`task-due ${new Date(task.due_date) < new Date() && task.status !== 'done' ? 'overdue' : ''}`}>{new Date(task.due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
               </motion.div>
             )}
 
@@ -1595,12 +2340,12 @@ export default function Admin() {
             {/* PROJETS */}
             {/* ============================================ */}
             {activeTab === 'projets' && (
-              <motion.div key="projets" {...pageTransition} className="projets-section">
-                <div className="section-header">
-                  <div>
-                    <h2>Gestion des Projets</h2>
-                    <p>Gérez tous vos projets de production</p>
-                  </div>
+              <motion.div key="projets" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    Projets
+                  </h3>
                   <motion.button
                     className="btn-primary"
                     onClick={() => setShowAddProjet(true)}
@@ -2523,160 +3268,126 @@ export default function Admin() {
             )}
 
             {/* ============================================ */}
-            {/* MÉDIAS - NOUVELLE INTERFACE */}
+            {/* MÉDIAS */}
             {/* ============================================ */}
             {activeTab === 'media' && (
-              <motion.div key="media" {...pageTransition} className="media-section">
-                <div className="section-header">
-                  <div>
-                    <h2>Gestion des Médias</h2>
-                    <p>{totalMedias} vidéo(s) au total - Organisées par catégorie</p>
-                  </div>
+              <motion.div key="media" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    Medias <span style={{ fontSize: 12, fontWeight: 400, color: 'rgba(255,255,255,0.4)' }}>({totalMedias})</span>
+                  </h3>
+                  <motion.button
+                    className="btn-primary"
+                    onClick={() => setShowAddMedia(true)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {icons.plus} Ajouter une vidéo
+                  </motion.button>
                 </div>
 
-                {/* Catégories avec leurs médias */}
-                {categories.map((category) => (
-                  <motion.div 
-                    key={category.id} 
-                    className="media-category-section"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <div className="category-header" style={{ borderColor: category.color }}>
-                      <div className="category-info">
-                        <div className="category-icon" style={{ background: `${category.color}20`, color: category.color }}>
-                          {getCategoryIcon(category.icon)}
-                        </div>
-                        <div>
-                          <h3>{category.name}</h3>
-                          <p>{category.description} • {category.medias?.length || 0} vidéo(s)</p>
+                {/* Liste des médias */}
+                <div className="media-cards-grid">
+                  {medias.map((media) => (
+                    <motion.div
+                      key={media.id}
+                      className="media-card-new"
+                      variants={itemVariants}
+                      whileHover={{ y: -5, boxShadow: '0 10px 40px rgba(139, 92, 246, 0.15)' }}
+                      layout
+                    >
+                      {/* Thumbnail YouTube */}
+                      <div className="media-thumbnail">
+                        {getYouTubeThumbnail(media.url) ? (
+                          <img src={getYouTubeThumbnail(media.url)} alt={media.name} />
+                        ) : (
+                          <div className="media-placeholder">
+                            {icons.play}
+                          </div>
+                        )}
+                        <div className="media-overlay">
+                          <motion.button
+                            className="play-btn"
+                            onClick={() => window.open(media.url.replace('/embed/', '/watch?v='), '_blank')}
+                            whileHover={{ scale: 1.1 }}
+                          >
+                            {icons.play}
+                          </motion.button>
                         </div>
                       </div>
-                      <motion.button 
-                        className="btn-add-category"
-                        style={{ background: category.color }}
-                        onClick={() => { setAddToCategory(category.id); setShowAddMedia(true) }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {icons.plus} Ajouter
-                      </motion.button>
-                    </div>
 
-                    <div className="media-cards-grid">
-                      {category.medias?.map((media) => (
-                        <motion.div 
-                          key={media.id} 
-                          className="media-card-new"
-                          variants={itemVariants}
-                          whileHover={{ y: -5, boxShadow: `0 10px 40px ${category.color}20` }}
-                          layout
-                        >
-                          {/* Thumbnail YouTube */}
-                          <div className="media-thumbnail">
-                            {media.type === 'youtube' && getYouTubeThumbnail(media.url) ? (
-                              <img src={getYouTubeThumbnail(media.url)} alt={media.name} />
-                            ) : (
-                              <div className="media-placeholder">
-                                {icons.play}
-                              </div>
-                            )}
-                            <div className="media-overlay">
-                              <motion.button 
-                                className="play-btn"
-                                onClick={() => window.open(media.url.replace('/embed/', '/watch?v='), '_blank')}
+                      {/* Info */}
+                      <div className="media-card-content">
+                        {editingMedia?.id === media.id ? (
+                          <div className="media-edit-inline">
+                            <input
+                              type="text"
+                              value={editingMedia.name}
+                              onChange={e => setEditingMedia({...editingMedia, name: e.target.value})}
+                              placeholder="Titre"
+                            />
+                            <input
+                              type="text"
+                              value={editingMedia.url}
+                              onChange={e => setEditingMedia({...editingMedia, url: e.target.value})}
+                              placeholder="URL YouTube"
+                            />
+                            <textarea
+                              value={editingMedia.description || ''}
+                              onChange={e => setEditingMedia({...editingMedia, description: e.target.value})}
+                              placeholder="Sous-titre (optionnel)"
+                              rows={2}
+                            />
+                            <div className="edit-inline-actions">
+                              <button className="btn-save" onClick={handleSaveMedia}>{icons.check} Sauvegarder</button>
+                              <button className="btn-cancel" onClick={() => setEditingMedia(null)}>{icons.x}</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <h4>{media.name}</h4>
+                            {media.description && <p className="media-description">{media.description}</p>}
+                            <div className="media-url-display">
+                              {icons.link}
+                              <span>{media.url.substring(0, 40)}...</span>
+                            </div>
+                            <div className="media-card-actions">
+                              <motion.button
+                                className="action-btn edit"
+                                onClick={() => setEditingMedia({...media})}
                                 whileHover={{ scale: 1.1 }}
+                                title="Modifier"
                               >
-                                {icons.play}
+                                {icons.edit}
+                              </motion.button>
+                              <motion.button
+                                className="action-btn delete"
+                                onClick={() => handleDeleteMedia(media.id)}
+                                whileHover={{ scale: 1.1 }}
+                                title="Supprimer"
+                              >
+                                {icons.trash}
                               </motion.button>
                             </div>
-                            {media.featured && <span className="featured-badge">Vedette</span>}
-                          </div>
-
-                          {/* Info */}
-                          <div className="media-card-content">
-                            {editingMedia?.id === media.id ? (
-                              <div className="media-edit-inline">
-                                <input 
-                                  type="text" 
-                                  value={editingMedia.name} 
-                                  onChange={e => setEditingMedia({...editingMedia, name: e.target.value})}
-                                  placeholder="Nom"
-                                />
-                                <input 
-                                  type="text" 
-                                  value={editingMedia.url} 
-                                  onChange={e => setEditingMedia({...editingMedia, url: e.target.value})}
-                                  placeholder="URL YouTube embed"
-                                />
-                                <textarea
-                                  value={editingMedia.description || ''}
-                                  onChange={e => setEditingMedia({...editingMedia, description: e.target.value})}
-                                  placeholder="Description"
-                                  rows={2}
-                                />
-                                <div className="edit-inline-actions">
-                                  <button className="btn-save" onClick={handleSaveMedia}>{icons.check} Sauvegarder</button>
-                                  <button className="btn-cancel" onClick={() => setEditingMedia(null)}>{icons.x}</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <h4>{media.name}</h4>
-                                {media.description && <p className="media-description">{media.description}</p>}
-                                <div className="media-url-display">
-                                  {icons.link}
-                                  <span>{media.url.substring(0, 40)}...</span>
-                                </div>
-                                <div className="media-card-actions">
-                                  <motion.button 
-                                    className="action-btn edit"
-                                    onClick={() => setEditingMedia({...media})}
-                                    whileHover={{ scale: 1.1 }}
-                                    title="Modifier"
-                                  >
-                                    {icons.edit}
-                                  </motion.button>
-                                  <motion.button 
-                                    className="action-btn delete"
-                                    onClick={() => handleDeleteMedia(media.id)}
-                                    whileHover={{ scale: 1.1 }}
-                                    title="Supprimer"
-                                  >
-                                    {icons.trash}
-                                  </motion.button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </motion.div>
-                      ))}
-
-                      {/* Carte pour ajouter */}
-                      <motion.div 
-                        className="media-card-add"
-                        onClick={() => { setAddToCategory(category.id); setShowAddMedia(true) }}
-                        whileHover={{ scale: 1.02, borderColor: category.color }}
-                        style={{ '--hover-color': category.color }}
-                      >
-                        <div className="add-icon">{icons.plus}</div>
-                        <span>Ajouter une vidéo</span>
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                ))}
+                          </>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
 
                 {/* Modal Ajouter */}
                 <AnimatePresence>
                   {showAddMedia && (
-                    <motion.div 
-                      className="modal-overlay" 
-                      initial={{ opacity: 0 }} 
-                      animate={{ opacity: 1 }} 
+                    <motion.div
+                      className="modal-overlay"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      onClick={() => { setShowAddMedia(false); setAddToCategory(null) }}
+                      onClick={() => setShowAddMedia(false)}
                     >
-                      <motion.div 
+                      <motion.div
                         className="modal"
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
@@ -2685,61 +3396,40 @@ export default function Admin() {
                       >
                         <div className="modal-header">
                           <h3>Ajouter une vidéo</h3>
-                          <button className="close-btn" onClick={() => { setShowAddMedia(false); setAddToCategory(null) }}>{icons.x}</button>
+                          <button className="close-btn" onClick={() => setShowAddMedia(false)}>{icons.x}</button>
                         </div>
                         <div className="modal-body">
                           <div className="form-group">
-                            <label>Nom de la vidéo *</label>
-                            <input 
-                              type="text" 
-                              value={newMedia.name} 
+                            <label>Titre *</label>
+                            <input
+                              type="text"
+                              value={newMedia.name}
                               onChange={e => setNewMedia({...newMedia, name: e.target.value})}
-                              placeholder="Ex: Documentaire - Les Racines"
+                              placeholder="Ex: MAS & HITACHI"
                             />
                           </div>
                           <div className="form-group">
-                            <label>URL YouTube Embed *</label>
-                            <input 
-                              type="text" 
-                              value={newMedia.url} 
+                            <label>URL YouTube *</label>
+                            <input
+                              type="text"
+                              value={newMedia.url}
                               onChange={e => setNewMedia({...newMedia, url: e.target.value})}
                               placeholder="https://www.youtube.com/embed/VIDEO_ID"
                             />
-                            <span className="form-hint">Format: https://www.youtube.com/embed/VIDEO_ID</span>
+                            <span className="form-hint">Collez n'importe quel lien YouTube</span>
                           </div>
                           <div className="form-group">
-                            <label>Description</label>
+                            <label>Sous-titre</label>
                             <textarea
                               value={newMedia.description}
                               onChange={e => setNewMedia({...newMedia, description: e.target.value})}
-                              placeholder="Brève description de la vidéo..."
-                              rows={3}
+                              placeholder="Sous-titre optionnel..."
+                              rows={2}
                             />
-                          </div>
-                          <div className="form-group">
-                            <label>Catégorie</label>
-                            <select 
-                              value={addToCategory || newMedia.category_id || ''} 
-                              onChange={e => setNewMedia({...newMedia, category_id: parseInt(e.target.value)})}
-                            >
-                              {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="form-group checkbox">
-                            <label>
-                              <input 
-                                type="checkbox"
-                                checked={newMedia.featured}
-                                onChange={e => setNewMedia({...newMedia, featured: e.target.checked})}
-                              />
-                              <span>Mettre en vedette</span>
-                            </label>
                           </div>
                         </div>
                         <div className="modal-footer">
-                          <button className="btn-cancel" onClick={() => { setShowAddMedia(false); setAddToCategory(null) }}>Annuler</button>
+                          <button className="btn-cancel" onClick={() => setShowAddMedia(false)}>Annuler</button>
                           <motion.button className="btn-primary" onClick={handleAddMedia} whileHover={{ scale: 1.02 }}>
                             {icons.plus} Ajouter
                           </motion.button>
@@ -2754,9 +3444,8 @@ export default function Admin() {
                   <h4>Comment ajouter une vidéo YouTube ?</h4>
                   <ol>
                     <li>Allez sur votre vidéo YouTube</li>
-                    <li>Cliquez sur "Partager" puis "Intégrer"</li>
-                    <li>Copiez l'URL qui ressemble à: <code>https://www.youtube.com/embed/VIDEO_ID</code></li>
-                    <li>Collez cette URL dans le champ "URL YouTube Embed"</li>
+                    <li>Cliquez sur "Partager"</li>
+                    <li>Copiez le lien et collez-le dans le champ URL</li>
                   </ol>
                 </motion.div>
               </motion.div>
@@ -2766,11 +3455,13 @@ export default function Admin() {
             {/* CINÉMA */}
             {/* ============================================ */}
             {activeTab === 'cinema' && (
-              <motion.div key="cinema" {...pageTransition} className="cinema-admin-section">
-                <div className="section-header">
-                  <h2>Gestion du Cinéma</h2>
-                  <p>Gérez les films affichés sur le site</p>
-                  <motion.button 
+              <motion.div key="cinema" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>
+                    Cinema
+                  </h3>
+                  <motion.button
                     className="btn-primary"
                     onClick={() => setShowAddCinema(true)}
                     whileHover={{ scale: 1.02 }}
@@ -3112,11 +3803,13 @@ export default function Admin() {
             {/* BOUTIQUE */}
             {/* ============================================ */}
             {activeTab === 'boutique' && (
-              <motion.div key="boutique" {...pageTransition} className="boutique-admin-section">
-                <div className="section-header">
-                  <h2>Gestion de la Boutique</h2>
-                  <p>Gérez les produits de votre boutique</p>
-                  <motion.button 
+              <motion.div key="boutique" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    Boutique
+                  </h3>
+                  <motion.button
                     className="btn-primary"
                     onClick={() => setShowAddBoutique(true)}
                     whileHover={{ scale: 1.02 }}
@@ -3453,13 +4146,814 @@ export default function Admin() {
             )}
 
             {/* ============================================ */}
+            {/* PRESTATIONS */}
+            {/* ============================================ */}
+            {activeTab === 'prestations' && (
+              <motion.div key="prestations" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Prestations
+                  </h3>
+                  <motion.button
+                    className="btn-primary"
+                    onClick={() => setShowAddPrestation(true)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {icons.plus} Ajouter une prestation
+                  </motion.button>
+                </div>
+
+                <AnimatePresence>
+                  {prestationError && (
+                    <motion.div className="alert alert-error" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                      {prestationError}
+                    </motion.div>
+                  )}
+                  {prestationSuccess && (
+                    <motion.div className="alert alert-success" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                      {prestationSuccess}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="boutique-items-grid">
+                  {prestationsItems.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon">{icons.prestations}</div>
+                      <h3>Aucune prestation</h3>
+                      <p>Commencez par ajouter votre première prestation</p>
+                    </div>
+                  ) : (
+                    prestationsItems.map((item, index) => {
+                      const details = typeof item.details === 'string' ? JSON.parse(item.details) : item.details || []
+                      return (
+                        <motion.div
+                          key={item.id}
+                          className="boutique-item-card"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          style={{ borderLeftColor: 'rgba(201, 168, 76, 0.5)' }}
+                        >
+                          <div className="boutique-item-header">
+                            <span className={`badge badge-status ${item.status}`}>{item.status === 'active' ? 'Actif' : 'Inactif'}</span>
+                            <span className="boutique-order">#{item.display_order || 0}</span>
+                          </div>
+                          <h3 className="boutique-item-title">{item.title}</h3>
+                          <p className="boutique-item-desc">{item.description?.substring(0, 100)}...</p>
+                          {details.length > 0 && (
+                            <div className="boutique-item-features">
+                              <span>{details.length} détail(s)</span>
+                            </div>
+                          )}
+                          <div className="boutique-item-actions">
+                            <motion.button
+                              className="btn-icon"
+                              onClick={() => setEditingPrestation({
+                                ...item,
+                                details: typeof item.details === 'string' ? JSON.parse(item.details) : item.details || []
+                              })}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              title="Modifier"
+                            >
+                              {icons.edit}
+                            </motion.button>
+                            <motion.button
+                              className="btn-icon btn-danger"
+                              onClick={() => handleDeletePrestation(item.id)}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              title="Supprimer"
+                            >
+                              {icons.trash}
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )
+                    })
+                  )}
+                </div>
+
+                {/* Modal: Ajouter une prestation */}
+                <AnimatePresence>
+                  {showAddPrestation && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddPrestation(false)}>
+                      <motion.div className="modal modal-large" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                          <h2>Ajouter une prestation</h2>
+                          <button className="modal-close" onClick={() => setShowAddPrestation(false)}>{icons.close}</button>
+                        </div>
+                        <div className="modal-body">
+                          <div className="form-section">
+                            <h4>Informations générales</h4>
+                            <div className="form-group">
+                              <label>Titre *</label>
+                              <input type="text" value={newPrestation.title} onChange={(e) => setNewPrestation({...newPrestation, title: e.target.value})} placeholder="Ex: Production" />
+                            </div>
+                            <div className="form-group">
+                              <label>Description</label>
+                              <textarea value={newPrestation.description} onChange={(e) => setNewPrestation({...newPrestation, description: e.target.value})} rows={3} placeholder="Description de la prestation" />
+                            </div>
+                            <div className="form-row">
+                              <div className="form-group">
+                                <label>Icône</label>
+                                <select value={newPrestation.icon} onChange={(e) => setNewPrestation({...newPrestation, icon: e.target.value})}>
+                                  <option value="conception">Conception</option>
+                                  <option value="gestion">Gestion</option>
+                                  <option value="preproduction">Pré-production</option>
+                                  <option value="production">Production</option>
+                                  <option value="postproduction">Post-production</option>
+                                  <option value="diffusion">Diffusion</option>
+                                  <option value="video">Vidéo</option>
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label>Statut</label>
+                                <select value={newPrestation.status} onChange={(e) => setNewPrestation({...newPrestation, status: e.target.value})}>
+                                  <option value="active">Actif</option>
+                                  <option value="inactive">Inactif</option>
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label>Ordre</label>
+                                <input type="number" value={newPrestation.display_order} onChange={(e) => setNewPrestation({...newPrestation, display_order: parseInt(e.target.value) || 0})} />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="form-section">
+                            <h4>Détails / Points clés</h4>
+                            <div className="features-list">
+                              {newPrestation.details.map((detail, index) => (
+                                <div key={index} className="feature-item">
+                                  <span>{detail}</span>
+                                  <button type="button" className="btn-remove-feature" onClick={() => removeDetail(index)}>×</button>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="feature-input-group">
+                              <input type="text" value={newDetail} onChange={(e) => setNewDetail(e.target.value)} placeholder="Ajouter un détail" onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addDetail())} />
+                              <button type="button" className="btn-add-feature" onClick={() => addDetail()}>+</button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="modal-footer">
+                          <button type="button" className="btn-secondary" onClick={() => setShowAddPrestation(false)}>Annuler</button>
+                          <button type="button" className="btn-primary" onClick={handleCreatePrestation}>Ajouter la prestation</button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Modal: Modifier une prestation */}
+                <AnimatePresence>
+                  {editingPrestation && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingPrestation(null)}>
+                      <motion.div className="modal modal-large" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                          <h2>Modifier la prestation</h2>
+                          <button className="modal-close" onClick={() => setEditingPrestation(null)}>{icons.close}</button>
+                        </div>
+                        <div className="modal-body">
+                          <div className="form-section">
+                            <h4>Informations générales</h4>
+                            <div className="form-group">
+                              <label>Titre *</label>
+                              <input type="text" value={editingPrestation.title} onChange={(e) => setEditingPrestation({...editingPrestation, title: e.target.value})} />
+                            </div>
+                            <div className="form-group">
+                              <label>Description</label>
+                              <textarea value={editingPrestation.description || ''} onChange={(e) => setEditingPrestation({...editingPrestation, description: e.target.value})} rows={3} />
+                            </div>
+                            <div className="form-row">
+                              <div className="form-group">
+                                <label>Icône</label>
+                                <select value={editingPrestation.icon} onChange={(e) => setEditingPrestation({...editingPrestation, icon: e.target.value})}>
+                                  <option value="conception">Conception</option>
+                                  <option value="gestion">Gestion</option>
+                                  <option value="preproduction">Pré-production</option>
+                                  <option value="production">Production</option>
+                                  <option value="postproduction">Post-production</option>
+                                  <option value="diffusion">Diffusion</option>
+                                  <option value="video">Vidéo</option>
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label>Statut</label>
+                                <select value={editingPrestation.status} onChange={(e) => setEditingPrestation({...editingPrestation, status: e.target.value})}>
+                                  <option value="active">Actif</option>
+                                  <option value="inactive">Inactif</option>
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label>Ordre</label>
+                                <input type="number" value={editingPrestation.display_order || 0} onChange={(e) => setEditingPrestation({...editingPrestation, display_order: parseInt(e.target.value) || 0})} />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="form-section">
+                            <h4>Détails / Points clés</h4>
+                            <div className="features-list">
+                              {(editingPrestation.details || []).map((detail, index) => (
+                                <div key={index} className="feature-item">
+                                  <span>{detail}</span>
+                                  <button type="button" className="btn-remove-feature" onClick={() => removeDetail(index, true)}>×</button>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="feature-input-group">
+                              <input type="text" value={newDetail} onChange={(e) => setNewDetail(e.target.value)} placeholder="Ajouter un détail" onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addDetail(true))} />
+                              <button type="button" className="btn-add-feature" onClick={() => addDetail(true)}>+</button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="modal-footer">
+                          <button type="button" className="btn-secondary" onClick={() => setEditingPrestation(null)}>Annuler</button>
+                          <button type="button" className="btn-primary" onClick={handleUpdatePrestation}>Enregistrer</button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+
+            {/* ============================================ */}
+            {/* OFFRES */}
+            {/* ============================================ */}
+            {activeTab === 'offres' && (
+              <motion.div key="offres" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg>
+                    Offres
+                  </h3>
+                  <motion.button className="btn-primary" onClick={() => setShowAddOffre(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    {icons.plus} Ajouter une offre
+                  </motion.button>
+                </div>
+
+                <AnimatePresence>
+                  {offreError && <motion.div className="alert alert-error" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{offreError}</motion.div>}
+                  {offreSuccess && <motion.div className="alert alert-success" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{offreSuccess}</motion.div>}
+                </AnimatePresence>
+
+                <div className="boutique-items-grid">
+                  {offresItems.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg></div>
+                      <h3>Aucune offre</h3>
+                      <p>Ajoutez vos packages et projets ponctuels</p>
+                    </div>
+                  ) : (
+                    offresItems.map((item, index) => {
+                      const features = typeof item.features === 'string' ? JSON.parse(item.features) : item.features || []
+                      return (
+                        <motion.div key={item.id} className="boutique-item-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}
+                          style={{ borderLeftColor: item.is_featured ? 'rgba(201, 168, 76, 0.8)' : item.type === 'oneoff' ? 'rgba(100, 200, 150, 0.5)' : 'rgba(255, 255, 255, 0.15)' }}>
+                          <div className="boutique-item-header">
+                            <span className={`badge badge-status ${item.status}`}>{item.status === 'active' ? 'Actif' : 'Inactif'}</span>
+                            <span className="boutique-order" style={{ background: item.type === 'oneoff' ? 'rgba(100,200,150,0.15)' : 'rgba(201,168,76,0.15)', color: item.type === 'oneoff' ? '#64c896' : '#c9a84c' }}>
+                              {item.type === 'package' ? 'Package' : 'Ponctuel'}
+                            </span>
+                          </div>
+                          <h3 className="boutique-item-title">{item.name}</h3>
+                          <p className="boutique-item-desc">{item.description?.substring(0, 80)}{item.description?.length > 80 ? '...' : ''}</p>
+                          <div className="boutique-item-features">
+                            <span style={{color:'#c9a84c',fontWeight:600}}>{item.type === 'package' ? new Intl.NumberFormat('fr-FR').format(item.price) + ' FCFA ' + item.period : item.period}</span>
+                            {item.is_featured && <span style={{color:'#c9a84c',fontSize:10,letterSpacing:1}}>POPULAIRE</span>}
+                          </div>
+                          {features.length > 0 && <div className="boutique-item-features"><span>{features.length} feature(s)</span></div>}
+                          <div className="boutique-item-actions">
+                            <motion.button className="btn-icon" onClick={() => {
+                              const f = typeof item.features === 'string' ? JSON.parse(item.features) : item.features || []
+                              const ni = typeof item.not_included === 'string' ? JSON.parse(item.not_included) : item.not_included || []
+                              setEditingOffre({ ...item, features: f, not_included: ni })
+                            }} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Modifier">{icons.edit}</motion.button>
+                            <motion.button className="btn-icon btn-danger" onClick={() => handleDeleteOffre(item.id)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Supprimer">{icons.trash}</motion.button>
+                          </div>
+                        </motion.div>
+                      )
+                    })
+                  )}
+                </div>
+
+                {/* Modal: Ajouter une offre */}
+                <AnimatePresence>
+                  {showAddOffre && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddOffre(false)}>
+                      <motion.div className="modal modal-large" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                          <h2>Ajouter une offre</h2>
+                          <button className="modal-close" onClick={() => setShowAddOffre(false)}>{icons.close}</button>
+                        </div>
+                        <div className="modal-body">
+                          <div className="form-section">
+                            <h4>Informations generales</h4>
+                            <div className="form-group">
+                              <label>Nom *</label>
+                              <input type="text" value={newOffre.name} onChange={(e) => setNewOffre({...newOffre, name: e.target.value})} placeholder="Ex: Corporate" />
+                            </div>
+                            <div className="form-group">
+                              <label>Description</label>
+                              <textarea value={newOffre.description} onChange={(e) => setNewOffre({...newOffre, description: e.target.value})} rows={2} placeholder="Description courte" />
+                            </div>
+                            <div className="form-row">
+                              <div className="form-group">
+                                <label>Type</label>
+                                <select value={newOffre.type} onChange={(e) => setNewOffre({...newOffre, type: e.target.value})}>
+                                  <option value="package">Package mensuel</option>
+                                  <option value="oneoff">Projet ponctuel</option>
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label>Cible</label>
+                                <input type="text" value={newOffre.target} onChange={(e) => setNewOffre({...newOffre, target: e.target.value})} placeholder="Ex: PME & Startups" />
+                              </div>
+                            </div>
+                            <div className="form-row">
+                              <div className="form-group">
+                                <label>Prix (FCFA)</label>
+                                <input type="number" value={newOffre.price} onChange={(e) => setNewOffre({...newOffre, price: parseInt(e.target.value) || 0})} />
+                              </div>
+                              <div className="form-group">
+                                <label>Periode / Fourchette</label>
+                                <input type="text" value={newOffre.period} onChange={(e) => setNewOffre({...newOffre, period: e.target.value})} placeholder="/ mois ou 300 000 - 700 000" />
+                              </div>
+                            </div>
+                            <div className="form-row">
+                              <div className="form-group">
+                                <label>Texte CTA</label>
+                                <input type="text" value={newOffre.cta} onChange={(e) => setNewOffre({...newOffre, cta: e.target.value})} />
+                              </div>
+                              <div className="form-group">
+                                <label>Statut</label>
+                                <select value={newOffre.status} onChange={(e) => setNewOffre({...newOffre, status: e.target.value})}>
+                                  <option value="active">Actif</option>
+                                  <option value="inactive">Inactif</option>
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label>Ordre</label>
+                                <input type="number" value={newOffre.display_order} onChange={(e) => setNewOffre({...newOffre, display_order: parseInt(e.target.value) || 0})} />
+                              </div>
+                            </div>
+                            <div className="form-group" style={{display:'flex',alignItems:'center',gap:8}}>
+                              <input type="checkbox" checked={newOffre.is_featured} onChange={(e) => setNewOffre({...newOffre, is_featured: e.target.checked})} style={{width:'auto'}} />
+                              <label style={{margin:0}}>Mise en avant (Le plus populaire)</label>
+                            </div>
+                          </div>
+                          <div className="form-section">
+                            <h4>Features incluses</h4>
+                            <div className="features-list">
+                              {(newOffre.features || []).map((f, i) => (
+                                <div key={i} className="feature-item"><span>{f}</span><button type="button" className="btn-remove-feature" onClick={() => removeOffreFeature('features', i)}>x</button></div>
+                              ))}
+                            </div>
+                            <div className="feature-input-group">
+                              <input type="text" value={newOffreFeature} onChange={(e) => setNewOffreFeature(e.target.value)} placeholder="Ajouter une feature" onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOffreFeature('features'))} />
+                              <button type="button" className="btn-add-feature" onClick={() => addOffreFeature('features')}>+</button>
+                            </div>
+                          </div>
+                          <div className="form-section">
+                            <h4>Non inclus</h4>
+                            <div className="features-list">
+                              {(newOffre.not_included || []).map((f, i) => (
+                                <div key={i} className="feature-item" style={{opacity:0.5}}><span>{f}</span><button type="button" className="btn-remove-feature" onClick={() => removeOffreFeature('not_included', i)}>x</button></div>
+                              ))}
+                            </div>
+                            <div className="feature-input-group">
+                              <input type="text" value={newOffreFeature} onChange={(e) => setNewOffreFeature(e.target.value)} placeholder="Ex: Version anglaise" onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOffreFeature('not_included'))} />
+                              <button type="button" className="btn-add-feature" onClick={() => addOffreFeature('not_included')}>+</button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="modal-footer">
+                          <button type="button" className="btn-secondary" onClick={() => setShowAddOffre(false)}>Annuler</button>
+                          <button type="button" className="btn-primary" onClick={handleCreateOffre}>Ajouter l'offre</button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Modal: Modifier une offre */}
+                <AnimatePresence>
+                  {editingOffre && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingOffre(null)}>
+                      <motion.div className="modal modal-large" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                          <h2>Modifier l'offre</h2>
+                          <button className="modal-close" onClick={() => setEditingOffre(null)}>{icons.close}</button>
+                        </div>
+                        <div className="modal-body">
+                          <div className="form-section">
+                            <h4>Informations generales</h4>
+                            <div className="form-group">
+                              <label>Nom *</label>
+                              <input type="text" value={editingOffre.name} onChange={(e) => setEditingOffre({...editingOffre, name: e.target.value})} />
+                            </div>
+                            <div className="form-group">
+                              <label>Description</label>
+                              <textarea value={editingOffre.description || ''} onChange={(e) => setEditingOffre({...editingOffre, description: e.target.value})} rows={2} />
+                            </div>
+                            <div className="form-row">
+                              <div className="form-group">
+                                <label>Type</label>
+                                <select value={editingOffre.type} onChange={(e) => setEditingOffre({...editingOffre, type: e.target.value})}>
+                                  <option value="package">Package mensuel</option>
+                                  <option value="oneoff">Projet ponctuel</option>
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label>Cible</label>
+                                <input type="text" value={editingOffre.target || ''} onChange={(e) => setEditingOffre({...editingOffre, target: e.target.value})} />
+                              </div>
+                            </div>
+                            <div className="form-row">
+                              <div className="form-group">
+                                <label>Prix (FCFA)</label>
+                                <input type="number" value={editingOffre.price} onChange={(e) => setEditingOffre({...editingOffre, price: parseInt(e.target.value) || 0})} />
+                              </div>
+                              <div className="form-group">
+                                <label>Periode / Fourchette</label>
+                                <input type="text" value={editingOffre.period || ''} onChange={(e) => setEditingOffre({...editingOffre, period: e.target.value})} />
+                              </div>
+                            </div>
+                            <div className="form-row">
+                              <div className="form-group">
+                                <label>Texte CTA</label>
+                                <input type="text" value={editingOffre.cta || ''} onChange={(e) => setEditingOffre({...editingOffre, cta: e.target.value})} />
+                              </div>
+                              <div className="form-group">
+                                <label>Statut</label>
+                                <select value={editingOffre.status} onChange={(e) => setEditingOffre({...editingOffre, status: e.target.value})}>
+                                  <option value="active">Actif</option>
+                                  <option value="inactive">Inactif</option>
+                                </select>
+                              </div>
+                              <div className="form-group">
+                                <label>Ordre</label>
+                                <input type="number" value={editingOffre.display_order || 0} onChange={(e) => setEditingOffre({...editingOffre, display_order: parseInt(e.target.value) || 0})} />
+                              </div>
+                            </div>
+                            <div className="form-group" style={{display:'flex',alignItems:'center',gap:8}}>
+                              <input type="checkbox" checked={editingOffre.is_featured || false} onChange={(e) => setEditingOffre({...editingOffre, is_featured: e.target.checked})} style={{width:'auto'}} />
+                              <label style={{margin:0}}>Mise en avant (Le plus populaire)</label>
+                            </div>
+                          </div>
+                          <div className="form-section">
+                            <h4>Features incluses</h4>
+                            <div className="features-list">
+                              {(editingOffre.features || []).map((f, i) => (
+                                <div key={i} className="feature-item"><span>{f}</span><button type="button" className="btn-remove-feature" onClick={() => removeOffreFeature('features', i, true)}>x</button></div>
+                              ))}
+                            </div>
+                            <div className="feature-input-group">
+                              <input type="text" value={newOffreFeature} onChange={(e) => setNewOffreFeature(e.target.value)} placeholder="Ajouter une feature" onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOffreFeature('features', true))} />
+                              <button type="button" className="btn-add-feature" onClick={() => addOffreFeature('features', true)}>+</button>
+                            </div>
+                          </div>
+                          <div className="form-section">
+                            <h4>Non inclus</h4>
+                            <div className="features-list">
+                              {(editingOffre.not_included || []).map((f, i) => (
+                                <div key={i} className="feature-item" style={{opacity:0.5}}><span>{f}</span><button type="button" className="btn-remove-feature" onClick={() => removeOffreFeature('not_included', i, true)}>x</button></div>
+                              ))}
+                            </div>
+                            <div className="feature-input-group">
+                              <input type="text" value={newOffreFeature} onChange={(e) => setNewOffreFeature(e.target.value)} placeholder="Ex: Version anglaise" onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOffreFeature('not_included', true))} />
+                              <button type="button" className="btn-add-feature" onClick={() => addOffreFeature('not_included', true)}>+</button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="modal-footer">
+                          <button type="button" className="btn-secondary" onClick={() => setEditingOffre(null)}>Annuler</button>
+                          <button type="button" className="btn-primary" onClick={handleUpdateOffre}>Enregistrer</button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+
+            {/* ============================================ */}
+            {/* TÂCHES */}
+            {/* ============================================ */}
+            {activeTab === 'tasks' && (
+              <motion.div key="tasks" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    Taches <span style={{ fontSize: 12, fontWeight: 400, color: 'rgba(255,255,255,0.4)' }}>({tasks.length})</span>
+                  </h3>
+                  <motion.button
+                    className="btn-primary"
+                    onClick={() => setShowAddTask(true)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {icons.plus} Nouvelle tâche
+                  </motion.button>
+                </div>
+
+                <AnimatePresence>
+                  {taskError && (
+                    <motion.div className="alert alert-error" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                      {taskError}
+                    </motion.div>
+                  )}
+                  {taskSuccess && (
+                    <motion.div className="alert alert-success" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                      {taskSuccess}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Stats rapides */}
+                {tasksStats && (
+                  <div className="tasks-stats-bar">
+                    <div className="tasks-stat-item">
+                      <span className="tasks-stat-value">{tasksStats.total}</span>
+                      <span className="tasks-stat-label">Total</span>
+                    </div>
+                    <div className="tasks-stat-item">
+                      <span className="tasks-stat-value todo">{tasksStats.todo}</span>
+                      <span className="tasks-stat-label">A faire</span>
+                    </div>
+                    <div className="tasks-stat-item">
+                      <span className="tasks-stat-value in-progress">{tasksStats.in_progress}</span>
+                      <span className="tasks-stat-label">En cours</span>
+                    </div>
+                    <div className="tasks-stat-item">
+                      <span className="tasks-stat-value done">{tasksStats.done}</span>
+                      <span className="tasks-stat-label">Termine</span>
+                    </div>
+                    {tasksStats.overdue > 0 && (
+                      <div className="tasks-stat-item">
+                        <span className="tasks-stat-value overdue">{tasksStats.overdue}</span>
+                        <span className="tasks-stat-label">En retard</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Kanban Board - Drag & Drop */}
+                <div className="tasks-kanban-flat">
+                  {[
+                    { id: 'todo', label: 'A faire', color: '#f59e0b' },
+                    { id: 'in_progress', label: 'En cours', color: '#3b82f6' },
+                    { id: 'done', label: 'Termine', color: '#22c55e' }
+                  ].map(column => {
+                    const columnTasks = tasks.filter(t => t.status === column.id)
+                    return (
+                      <div
+                        key={column.id}
+                        className={`tasks-kanban-zone ${dragOverCol === column.id ? 'drag-over' : ''}`}
+                        onDragOver={e => { e.preventDefault(); setDragOverCol(column.id) }}
+                        onDragLeave={() => setDragOverCol(null)}
+                        onDrop={async e => {
+                          e.preventDefault()
+                          setDragOverCol(null)
+                          if (draggedTask && draggedTask.status !== column.id) {
+                            await tasksAPI.update(draggedTask.id, { status: column.id })
+                            fetchTasksData()
+                          }
+                          setDraggedTask(null)
+                        }}
+                      >
+                        <div className="tasks-zone-header">
+                          <span className="tasks-zone-dot" style={{ background: column.color }} />
+                          <span className="tasks-zone-title">{column.label}</span>
+                          <span className="tasks-zone-count" style={{ color: column.color }}>{columnTasks.length}</span>
+                        </div>
+                        <div className="tasks-zone-cards">
+                          <AnimatePresence>
+                            {columnTasks.map(task => (
+                              <motion.div
+                                key={task.id}
+                                className={`task-drag-card ${task.priority}`}
+                                draggable
+                                onDragStart={() => setDraggedTask(task)}
+                                onDragEnd={() => { setDraggedTask(null); setDragOverCol(null) }}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                layout
+                              >
+                                <div className="task-drag-grip">
+                                  <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="2" r="1.5"/><circle cx="7" cy="2" r="1.5"/><circle cx="3" cy="8" r="1.5"/><circle cx="7" cy="8" r="1.5"/><circle cx="3" cy="14" r="1.5"/><circle cx="7" cy="14" r="1.5"/></svg>
+                                </div>
+                                <div className="task-drag-content">
+                                  <div className="task-drag-top">
+                                    <div
+                                      className={`task-checkbox ${task.status}`}
+                                      onClick={() => handleToggleTaskStatus(task)}
+                                    >
+                                      {task.status === 'done' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>}
+                                      {task.status === 'in_progress' && <div className="task-progress-dot"></div>}
+                                    </div>
+                                    <div className="task-drag-info">
+                                      <div className={`task-title ${task.status === 'done' ? 'done' : ''}`}>{task.title}</div>
+                                      {task.description && <div className="task-drag-desc">{task.description}</div>}
+                                    </div>
+                                    <div className="task-drag-btns">
+                                      <motion.button
+                                        className="action-btn edit"
+                                        onClick={() => setEditingTask({ ...task, due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : '' })}
+                                        whileHover={{ scale: 1.1 }}
+                                      >
+                                        {icons.edit}
+                                      </motion.button>
+                                      <motion.button className="action-btn delete" onClick={() => handleDeleteTask(task.id)} whileHover={{ scale: 1.1 }}>
+                                        {icons.trash}
+                                      </motion.button>
+                                    </div>
+                                  </div>
+                                  <div className="task-drag-meta">
+                                    <span className={`task-priority ${task.priority}`}>
+                                      {task.priority === 'urgent' ? 'urgent' : task.priority === 'high' ? 'haute' : task.priority === 'medium' ? 'moyenne' : 'basse'}
+                                    </span>
+                                    {task.due_date && (
+                                      <span className={`task-due ${new Date(task.due_date) < new Date() && task.status !== 'done' ? 'overdue' : ''}`}>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        {new Date(task.due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                                      </span>
+                                    )}
+                                    {task.category && <span className="task-category-badge">{task.category}</span>}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                          {columnTasks.length === 0 && (
+                            <div className="tasks-zone-empty">Deposez une tache ici</div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Modal: Ajouter une tâche */}
+                <AnimatePresence>
+                  {showAddTask && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddTask(false)}>
+                      <motion.div className="modal modal-large" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                          <h2>Nouvelle tâche</h2>
+                          <button className="modal-close" onClick={() => setShowAddTask(false)}>{icons.close}</button>
+                        </div>
+                        <div className="modal-body">
+                          <div className="form-group">
+                            <label>Titre *</label>
+                            <input type="text" value={newTask.title} onChange={(e) => setNewTask({...newTask, title: e.target.value})} placeholder="Titre de la tâche" />
+                          </div>
+                          <div className="form-group">
+                            <label>Description</label>
+                            <textarea value={newTask.description} onChange={(e) => setNewTask({...newTask, description: e.target.value})} rows={3} placeholder="Description optionnelle" />
+                          </div>
+                          <div className="form-group">
+                            <label>Priorité</label>
+                            <div className="priority-selector">
+                              {[
+                                { value: 'low', label: 'Basse' },
+                                { value: 'medium', label: 'Moyenne' },
+                                { value: 'high', label: 'Haute' },
+                                { value: 'urgent', label: 'Urgent' }
+                              ].map(p => (
+                                <button
+                                  key={p.value}
+                                  type="button"
+                                  className={`priority-option ${p.value} ${newTask.priority === p.value ? 'active' : ''}`}
+                                  onClick={() => setNewTask({...newTask, priority: p.value})}
+                                >
+                                  {p.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Date d'échéance</label>
+                              <input type="date" value={newTask.due_date} onChange={(e) => setNewTask({...newTask, due_date: e.target.value})} />
+                            </div>
+                            <div className="form-group">
+                              <label>Assigné à</label>
+                              <input type="text" value={newTask.assigned_to} onChange={(e) => setNewTask({...newTask, assigned_to: e.target.value})} placeholder="Nom de la personne" />
+                            </div>
+                            <div className="form-group">
+                              <label>Catégorie</label>
+                              <input type="text" value={newTask.category} onChange={(e) => setNewTask({...newTask, category: e.target.value})} placeholder="Ex: Production, Admin..." />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="modal-footer">
+                          <button type="button" className="btn-secondary" onClick={() => setShowAddTask(false)}>Annuler</button>
+                          <button type="button" className="btn-primary" onClick={handleCreateTask}>Ajouter la tâche</button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Modal: Modifier une tâche */}
+                <AnimatePresence>
+                  {editingTask && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingTask(null)}>
+                      <motion.div className="modal modal-large" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                          <h2>Modifier la tâche</h2>
+                          <button className="modal-close" onClick={() => setEditingTask(null)}>{icons.close}</button>
+                        </div>
+                        <div className="modal-body">
+                          <div className="form-group">
+                            <label>Titre *</label>
+                            <input type="text" value={editingTask.title} onChange={(e) => setEditingTask({...editingTask, title: e.target.value})} />
+                          </div>
+                          <div className="form-group">
+                            <label>Description</label>
+                            <textarea value={editingTask.description || ''} onChange={(e) => setEditingTask({...editingTask, description: e.target.value})} rows={3} />
+                          </div>
+                          <div className="form-group">
+                            <label>Statut</label>
+                            <div className="priority-selector">
+                              {[
+                                { value: 'todo', label: 'A faire' },
+                                { value: 'in_progress', label: 'En cours' },
+                                { value: 'done', label: 'Terminé' }
+                              ].map(s => (
+                                <button
+                                  key={s.value}
+                                  type="button"
+                                  className={`priority-option status-${s.value} ${editingTask.status === s.value ? 'active' : ''}`}
+                                  onClick={() => setEditingTask({...editingTask, status: s.value})}
+                                >
+                                  {s.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label>Priorité</label>
+                            <div className="priority-selector">
+                              {[
+                                { value: 'low', label: 'Basse' },
+                                { value: 'medium', label: 'Moyenne' },
+                                { value: 'high', label: 'Haute' },
+                                { value: 'urgent', label: 'Urgent' }
+                              ].map(p => (
+                                <button
+                                  key={p.value}
+                                  type="button"
+                                  className={`priority-option ${p.value} ${editingTask.priority === p.value ? 'active' : ''}`}
+                                  onClick={() => setEditingTask({...editingTask, priority: p.value})}
+                                >
+                                  {p.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Date d'échéance</label>
+                              <input type="date" value={editingTask.due_date || ''} onChange={(e) => setEditingTask({...editingTask, due_date: e.target.value})} />
+                            </div>
+                            <div className="form-group">
+                              <label>Assigné à</label>
+                              <input type="text" value={editingTask.assigned_to || ''} onChange={(e) => setEditingTask({...editingTask, assigned_to: e.target.value})} />
+                            </div>
+                            <div className="form-group">
+                              <label>Catégorie</label>
+                              <input type="text" value={editingTask.category || ''} onChange={(e) => setEditingTask({...editingTask, category: e.target.value})} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="modal-footer">
+                          <button type="button" className="btn-secondary" onClick={() => setEditingTask(null)}>Annuler</button>
+                          <button type="button" className="btn-primary" onClick={handleUpdateTask}>Enregistrer</button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+
+            {/* ============================================ */}
             {/* MESSAGES */}
             {/* ============================================ */}
             {activeTab === 'messages' && (
-              <motion.div key="messages" {...pageTransition} className="messages-section">
-                <div className="section-header">
-                  <h2>Messages de contact</h2>
-                  <p>{messages.length} message(s) - {unreadCount} non lu(s)</p>
+              <motion.div key="messages" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Messages <span style={{ fontSize: 12, fontWeight: 400, color: 'rgba(255,255,255,0.4)' }}>({messages.length})</span>
+                  </h3>
                 </div>
 
                 {messages.length === 0 ? (
@@ -3530,11 +5024,14 @@ export default function Admin() {
             {/* COMPTABILITÉ */}
             {/* ============================================ */}
             {activeTab === 'comptabilite' && (
-              <motion.div key="comptabilite" {...pageTransition} className="comptabilite-section">
-                <div className="section-header">
-                  <h2>Comptabilité</h2>
-                  <motion.button 
-                    className="btn-add-transaction"
+              <motion.div key="comptabilite" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Comptabilite
+                  </h3>
+                  <motion.button
+                    className="btn-primary"
                     onClick={() => setShowAddTransaction(true)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -3557,97 +5054,67 @@ export default function Admin() {
                   )}
                 </AnimatePresence>
 
-                {/* Stats Cards */}
-                <div className="compta-stats">
-                  <motion.div className="compta-stat-card revenus" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                    <div className="stat-icon">{icons.arrowUp}</div>
-                    <div className="stat-content">
-                      <span className="stat-label">Revenus</span>
-                      <span className="stat-value">
-                        <AnimatedCounter value={comptaStats?.totals?.revenus || 0} duration={600} suffix=" FCFA" />
-                      </span>
-                      <span className="stat-count">
-                        <AnimatedCounter value={comptaStats?.totals?.countRevenus || 0} duration={400} /> transactions
-                      </span>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div className="compta-stat-card depenses" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                    <div className="stat-icon">{icons.arrowDown}</div>
-                    <div className="stat-content">
-                      <span className="stat-label">Dépenses</span>
-                      <span className="stat-value">
-                        <AnimatedCounter value={comptaStats?.totals?.depenses || 0} duration={600} suffix=" FCFA" />
-                      </span>
-                      <span className="stat-count">
-                        <AnimatedCounter value={comptaStats?.totals?.countDepenses || 0} duration={400} /> transactions
-                      </span>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div className={`compta-stat-card balance ${comptaStats?.totals?.balance >= 0 ? 'positive' : 'negative'}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                    <div className="stat-icon">{icons.comptabilite}</div>
-                    <div className="stat-content">
-                      <span className="stat-label">Balance</span>
-                      <span className="stat-value">
-                        <AnimatedCounter value={comptaStats?.totals?.balance || 0} duration={700} suffix=" FCFA" />
-                      </span>
-                      <span className="stat-count">{comptaStats?.totals?.balance >= 0 ? 'Bénéfice' : 'Déficit'}</span>
-                    </div>
-                  </motion.div>
-                </div>
-
                 {/* Filtres */}
-                <motion.div className="compta-filters" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-                  <div className="period-filter">
-                    {icons.calendar}
-                    <span className="period-label">Période :</span>
-                    <select 
-                      className="year-select"
-                      value={comptaFilter.year} 
-                      onChange={e => setComptaFilter({...comptaFilter, year: parseInt(e.target.value)})}
-                    >
+                <div className="dash-compta-filters">
+                  <div className="dash-filter-group">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <select value={comptaFilter.year} onChange={e => setComptaFilter({...comptaFilter, year: parseInt(e.target.value)})}>
                       {[...Array(5)].map((_, i) => {
                         const year = currentYear - 2 + i
                         return <option key={year} value={year}>{year}</option>
                       })}
                     </select>
-                    <select 
-                      className="month-select"
-                      value={comptaFilter.month} 
-                      onChange={e => setComptaFilter({...comptaFilter, month: e.target.value ? parseInt(e.target.value) : ''})}
-                    >
-                      <option value="">Toute l'année</option>
-                      <option value="1">Janvier</option>
-                      <option value="2">Février</option>
-                      <option value="3">Mars</option>
-                      <option value="4">Avril</option>
-                      <option value="5">Mai</option>
-                      <option value="6">Juin</option>
-                      <option value="7">Juillet</option>
-                      <option value="8">Août</option>
-                      <option value="9">Septembre</option>
-                      <option value="10">Octobre</option>
-                      <option value="11">Novembre</option>
-                      <option value="12">Décembre</option>
+                    <select value={comptaFilter.type} onChange={e => setComptaFilter({...comptaFilter, type: e.target.value})}>
+                      <option value="">Tous les types</option>
+                      <option value="revenu">Revenus</option>
+                      <option value="depense">Depenses</option>
                     </select>
-                    <button 
-                      className="btn-reset-filter"
-                      onClick={() => setComptaFilter({ type: '', year: currentYear, month: currentMonth })}
-                    >
-                      Réinitialiser
-                    </button>
                   </div>
-                  <select 
-                    className="type-select"
-                    value={comptaFilter.type} 
-                    onChange={e => setComptaFilter({...comptaFilter, type: e.target.value})}
-                  >
-                    <option value="">Tous les types</option>
-                    <option value="revenu">Revenus</option>
-                    <option value="depense">Dépenses</option>
-                  </select>
-                </motion.div>
+                  <div className="dash-month-pills">
+                    <button className={!comptaFilter.month ? 'active' : ''} onClick={() => setComptaFilter({...comptaFilter, month: ''})}>Annee</button>
+                    {['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => (
+                      <button key={i} className={comptaFilter.month === i + 1 ? 'active' : ''} onClick={() => setComptaFilter({...comptaFilter, month: i + 1})}>{m}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="compta-cards" style={{ marginBottom: '24px' }}>
+                  <div className="compta-card revenus">
+                    <div className="compta-card-header">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                      <span>Revenus</span>
+                    </div>
+                    <div className="compta-card-value">
+                      <AnimatedCounter value={comptaStats?.totals?.revenus || 0} duration={600} /> F
+                    </div>
+                    <div className="compta-card-sub">
+                      <AnimatedCounter value={comptaStats?.totals?.countRevenus || 0} duration={400} /> transactions
+                    </div>
+                  </div>
+                  <div className="compta-card depenses">
+                    <div className="compta-card-header">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                      <span>Depenses</span>
+                    </div>
+                    <div className="compta-card-value">
+                      <AnimatedCounter value={comptaStats?.totals?.depenses || 0} duration={600} /> F
+                    </div>
+                    <div className="compta-card-sub">
+                      <AnimatedCounter value={comptaStats?.totals?.countDepenses || 0} duration={400} /> transactions
+                    </div>
+                  </div>
+                  <div className="compta-card solde">
+                    <div className="compta-card-header">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                      <span>Solde</span>
+                    </div>
+                    <div className="compta-card-value">
+                      <AnimatedCounter value={comptaStats?.totals?.balance || 0} duration={600} /> F
+                    </div>
+                    <div className="compta-card-sub">{comptaStats?.totals?.balance >= 0 ? 'Benefice' : 'Deficit'}</div>
+                  </div>
+                </div>
 
                 {/* Liste des transactions */}
                 <motion.div className="transactions-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
@@ -4324,8 +5791,385 @@ export default function Admin() {
             {/* STORYBOARD */}
             {/* ============================================ */}
             {activeTab === 'storyboard' && (
-              <motion.div key="storyboard" {...pageTransition} className="storyboard-section">
+              <motion.div key="storyboard" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Storyboard
+                  </h3>
+                </div>
                 <Storyboard embedded={true} />
+              </motion.div>
+            )}
+
+            {/* ============================================ */}
+            {/* LEADS POWER + PROSPECTION */}
+            {/* ============================================ */}
+            {activeTab === 'leads' && (
+              <motion.div key="leads" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    Leads Power
+                  </h3>
+                </div>
+
+                {/* Sub-tabs: Recherche, Prospects, Leads */}
+                <div className="leads-subtabs">
+                  <button className={`leads-subtab ${leadsSubTab === 'search' ? 'active' : ''}`} onClick={() => setLeadsSubTab('search')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    Recherche
+                  </button>
+                  <button className={`leads-subtab ${leadsSubTab === 'prospects' ? 'active' : ''}`} onClick={() => setLeadsSubTab('prospects')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    Prospects ({prospects.length})
+                  </button>
+                  <button className={`leads-subtab ${leadsSubTab === 'emailing' ? 'active' : ''}`} onClick={() => setLeadsSubTab('emailing')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4z"/></svg>
+                    Emailing
+                  </button>
+                  <button className={`leads-subtab ${leadsSubTab === 'leads' ? 'active' : ''}`} onClick={() => setLeadsSubTab('leads')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    Leads ({leads.length})
+                  </button>
+                </div>
+
+                {/* ---- TAB: RECHERCHE ---- */}
+                {leadsSubTab === 'search' && (
+                  <div className="prospect-search-section">
+                    <div className="prospect-search-card">
+                      <div className="prospect-search-type">
+                        <button className={`search-type-btn ${searchType === 'maps' ? 'active' : ''}`} onClick={() => setSearchType('maps')}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                          Google Maps
+                        </button>
+                        <button className={`search-type-btn ${searchType === 'google' ? 'active' : ''}`} onClick={() => setSearchType('google')}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                          Google Search
+                        </button>
+                      </div>
+                      <div className="prospect-search-field">
+                        <label>Requete de recherche</label>
+                        <div className="prospect-input-wrapper">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                          <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="ex: restaurant Abidjan, agence immobiliere Cocody..."
+                            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                          />
+                        </div>
+                      </div>
+                      <div className="prospect-search-field">
+                        <label>Localisation</label>
+                        <div className="prospect-input-wrapper">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                          <input
+                            type="text"
+                            value={searchLocation}
+                            onChange={e => setSearchLocation(e.target.value)}
+                            placeholder="Abidjan"
+                          />
+                        </div>
+                      </div>
+                      <div className="prospect-search-actions">
+                        <motion.button
+                          className="btn-prospect-search"
+                          onClick={handleSearch}
+                          disabled={searching || !searchQuery}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                          {searching ? 'Recherche...' : 'Lancer la recherche'}
+                        </motion.button>
+                        <select value={searchLimit} onChange={e => setSearchLimit(parseInt(e.target.value))} className="prospect-limit-select">
+                          <option value={5}>5 resultats</option>
+                          <option value={10}>10 resultats</option>
+                          <option value={20}>20 resultats</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Search Results */}
+                    {searchResults.length > 0 && (
+                      <div className="prospect-results">
+                        <div className="prospect-results-header">
+                          <h4>{searchResults.length} résultat(s) trouvé(s)</h4>
+                          <div className="prospect-results-actions">
+                            {selectedProspects.length > 0 && (
+                              <motion.button className="btn-save-prospects" onClick={handleSaveSelected} whileHover={{ scale: 1.02 }}>
+                                {icons.check} Sauvegarder ({selectedProspects.length})
+                              </motion.button>
+                            )}
+                            <motion.button className="btn-save-all" onClick={handleSaveAllResults} whileHover={{ scale: 1.02 }}>
+                              {icons.plus} Tout sauvegarder
+                            </motion.button>
+                          </div>
+                        </div>
+                        {searchResults.map((result, index) => (
+                          <motion.div
+                            key={index}
+                            className={`prospect-result-card ${selectedProspects.includes(index) ? 'selected' : ''}`}
+                            onClick={() => toggleSelectProspect(index)}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <div className="prospect-result-check">
+                              <div className={`checkbox ${selectedProspects.includes(index) ? 'checked' : ''}`}>
+                                {selectedProspects.includes(index) && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="14" height="14"><path d="M20 6L9 17l-5-5"/></svg>}
+                              </div>
+                            </div>
+                            <div className="prospect-result-info">
+                              <strong>{result.name}</strong>
+                              {result.address && <span className="prospect-address">{result.address}</span>}
+                              {result.category && <span className="prospect-category">{result.category}</span>}
+                            </div>
+                            <div className="prospect-result-meta">
+                              {result.rating && <span className="prospect-rating">★ {result.rating} ({result.reviews_count})</span>}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ---- TAB: PROSPECTS ---- */}
+                {leadsSubTab === 'prospects' && (
+                  <div className="prospects-list-section">
+                    <div className="leads-filters">
+                      {['all', 'nouveau', 'contacte', 'interesse', 'converti', 'ignore'].map(f => (
+                        <button key={f} className={`leads-filter-btn ${prospectFilter === f ? 'active' : ''}`} onClick={() => setProspectFilter(f)}>
+                          {f === 'all' ? 'Tous' : f.charAt(0).toUpperCase() + f.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="prospects-table">
+                      <div className="prospects-table-header">
+                        <span>Entreprise</span>
+                        <span>Adresse</span>
+                        <span>Contact</span>
+                        <span>Note</span>
+                        <span>Statut</span>
+                        <span>Actions</span>
+                      </div>
+                      {prospects
+                        .filter(p => prospectFilter === 'all' || p.status === prospectFilter)
+                        .map(prospect => (
+                        <motion.div key={prospect.id} className="prospects-table-row" layout>
+                          <span className="prospect-cell-name">
+                            <strong>{prospect.name}</strong>
+                            {prospect.category && <small>{prospect.category}</small>}
+                          </span>
+                          <span className="prospect-cell-address"><small>{prospect.address || '-'}</small></span>
+                          <span className="prospect-cell-contact">
+                            {prospect.phone && <small>{prospect.phone}</small>}
+                            {prospect.website && <small style={{ wordBreak: 'break-all' }}>{prospect.website}</small>}
+                            {prospect.email && <small>{prospect.email}</small>}
+                          </span>
+                          <span className="prospect-cell-rating">{prospect.rating ? `★ ${prospect.rating}` : '-'}</span>
+                          <span className="prospect-cell-status">
+                            <select value={prospect.status} onChange={e => prospectsAPI.update(prospect.id, { status: e.target.value }).then(fetchProspects)} className="lead-status-select">
+                              <option value="nouveau">Nouveau</option>
+                              <option value="contacte">Contacté</option>
+                              <option value="interesse">Intéressé</option>
+                              <option value="converti">Converti</option>
+                              <option value="ignore">Ignoré</option>
+                            </select>
+                          </span>
+                          <span className="prospect-cell-actions">
+                            <motion.button className="action-btn edit" onClick={() => handleConvertProspect(prospect.id)} whileHover={{ scale: 1.1 }} title="Convertir en lead">
+                              {icons.leads}
+                            </motion.button>
+                            <motion.button className="action-btn delete" onClick={() => handleDeleteProspect(prospect.id)} whileHover={{ scale: 1.1 }} title="Supprimer">
+                              {icons.trash}
+                            </motion.button>
+                          </span>
+                        </motion.div>
+                      ))}
+                      {prospects.filter(p => prospectFilter === 'all' || p.status === prospectFilter).length === 0 && (
+                        <div className="leads-empty">Aucun prospect sauvegardé. Lancez une recherche pour commencer.</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ---- TAB: LEADS ---- */}
+                {leadsSubTab === 'leads' && (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                      <motion.button className="btn-primary" onClick={() => setShowAddLead(true)} whileHover={{ scale: 1.05 }}>
+                        {icons.plus} Ajouter un lead
+                      </motion.button>
+                    </div>
+
+                    {/* Kanban Board */}
+                    <div className="leads-kanban">
+                      {['nouveau', 'contacte', 'devis', 'converti', 'perdu'].map(status => {
+                        const statusLeads = leads.filter(l => l.status === status)
+                        return (
+                          <div key={status} className="kanban-column">
+                            <div className="kanban-column-header" style={{ borderTopColor: getLeadStatusColor(status) }}>
+                              <span className="kanban-column-dot" style={{ background: getLeadStatusColor(status) }} />
+                              <span className="kanban-column-title">{getLeadStatusLabel(status)}</span>
+                              <span className="kanban-column-count">{statusLeads.length}</span>
+                            </div>
+                            <div className="kanban-column-body">
+                              <AnimatePresence>
+                                {statusLeads.map(lead => (
+                                  <motion.div
+                                    key={lead.id}
+                                    className="kanban-card"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    layout
+                                  >
+                                    {editingLead?.id === lead.id ? (
+                                      <div className="kanban-card-edit">
+                                        <input value={editingLead.name} onChange={e => setEditingLead({...editingLead, name: e.target.value})} placeholder="Nom" />
+                                        <input value={editingLead.email || ''} onChange={e => setEditingLead({...editingLead, email: e.target.value})} placeholder="Email" />
+                                        <input value={editingLead.phone || ''} onChange={e => setEditingLead({...editingLead, phone: e.target.value})} placeholder="Telephone" />
+                                        <input value={editingLead.company || ''} onChange={e => setEditingLead({...editingLead, company: e.target.value})} placeholder="Entreprise" />
+                                        <input value={editingLead.service || ''} onChange={e => setEditingLead({...editingLead, service: e.target.value})} placeholder="Service" />
+                                        <textarea value={editingLead.notes || ''} onChange={e => setEditingLead({...editingLead, notes: e.target.value})} placeholder="Notes" rows={2} />
+                                        <div className="kanban-card-edit-actions">
+                                          <button className="btn-save" onClick={() => handleUpdateLead(editingLead.id, editingLead)}>{icons.check}</button>
+                                          <button className="btn-cancel" onClick={() => setEditingLead(null)}>{icons.x}</button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="kanban-card-header">
+                                          <strong>{lead.name}</strong>
+                                          {lead.company && <small>{lead.company}</small>}
+                                        </div>
+                                        <div className="kanban-card-info">
+                                          {lead.phone && <span>{lead.phone}</span>}
+                                          {lead.email && <span>{lead.email}</span>}
+                                          {lead.service && <span className="kanban-card-service">{lead.service}</span>}
+                                        </div>
+                                        <div className="kanban-card-footer">
+                                          <select
+                                            value={lead.status}
+                                            onChange={e => handleUpdateLead(lead.id, { status: e.target.value })}
+                                            className="kanban-move-select"
+                                          >
+                                            <option value="nouveau">→ Nouveau</option>
+                                            <option value="contacte">→ Contacte</option>
+                                            <option value="devis">→ Devis</option>
+                                            <option value="converti">→ Converti</option>
+                                            <option value="perdu">→ Perdu</option>
+                                          </select>
+                                          <div className="kanban-card-actions">
+                                            <motion.button className="action-btn edit" onClick={() => setEditingLead({...lead})} whileHover={{ scale: 1.1 }} title="Modifier">
+                                              {icons.edit}
+                                            </motion.button>
+                                            <motion.button className="action-btn delete" onClick={() => handleDeleteLead(lead.id)} whileHover={{ scale: 1.1 }} title="Supprimer">
+                                              {icons.trash}
+                                            </motion.button>
+                                          </div>
+                                        </div>
+                                        <span className="kanban-card-date">{new Date(lead.created_at).toLocaleDateString('fr-FR')}</span>
+                                      </>
+                                    )}
+                                  </motion.div>
+                                ))}
+                              </AnimatePresence>
+                              {statusLeads.length === 0 && (
+                                <div className="kanban-empty">Aucun lead</div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* ---- TAB: EMAILING ---- */}
+                {leadsSubTab === 'emailing' && (
+                  <div className="emailing-section">
+                    <div className="leads-empty" style={{ padding: '60px 20px' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ opacity: 0.3, marginBottom: 16 }}><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4z"/></svg>
+                      <h3 style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>Emailing</h3>
+                      <p style={{ color: 'rgba(255,255,255,0.3)' }}>Envoyez des emails de prospection a vos prospects et leads.</p>
+                      <p style={{ color: 'rgba(255,255,255,0.2)', marginTop: 8, fontSize: 13 }}>Fonctionnalité bientôt disponible</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Modal Ajouter */}
+                <AnimatePresence>
+                  {showAddLead && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddLead(false)}>
+                      <motion.div className="modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                          <h3>Ajouter un lead</h3>
+                          <button className="close-btn" onClick={() => setShowAddLead(false)}>{icons.x}</button>
+                        </div>
+                        <div className="modal-body">
+                          <div className="form-group">
+                            <label>Nom *</label>
+                            <input type="text" value={newLead.name} onChange={e => setNewLead({...newLead, name: e.target.value})} placeholder="Nom du prospect" />
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Email</label>
+                              <input type="email" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} placeholder="email@exemple.com" />
+                            </div>
+                            <div className="form-group">
+                              <label>Téléphone</label>
+                              <input type="text" value={newLead.phone} onChange={e => setNewLead({...newLead, phone: e.target.value})} placeholder="+225 07..." />
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Entreprise</label>
+                              <input type="text" value={newLead.company} onChange={e => setNewLead({...newLead, company: e.target.value})} placeholder="Nom entreprise" />
+                            </div>
+                            <div className="form-group">
+                              <label>Service demandé</label>
+                              <select value={newLead.service} onChange={e => setNewLead({...newLead, service: e.target.value})}>
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Film institutionnel">Film institutionnel</option>
+                                <option value="Documentaire">Documentaire</option>
+                                <option value="Publicité">Publicité</option>
+                                <option value="Clip musical">Clip musical</option>
+                                <option value="Couverture événement">Couverture événement</option>
+                                <option value="Autre">Autre</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label>Budget estimé</label>
+                            <select value={newLead.budget} onChange={e => setNewLead({...newLead, budget: e.target.value})}>
+                              <option value="">-- Sélectionner --</option>
+                              <option value="< 500 000 FCFA">Moins de 500 000 FCFA</option>
+                              <option value="500K - 1M FCFA">500 000 - 1 000 000 FCFA</option>
+                              <option value="1M - 3M FCFA">1 000 000 - 3 000 000 FCFA</option>
+                              <option value="3M - 5M FCFA">3 000 000 - 5 000 000 FCFA</option>
+                              <option value="> 5M FCFA">Plus de 5 000 000 FCFA</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Message / Détails</label>
+                            <textarea value={newLead.message} onChange={e => setNewLead({...newLead, message: e.target.value})} placeholder="Détails du projet..." rows={3} />
+                          </div>
+                        </div>
+                        <div className="modal-footer">
+                          <button className="btn-cancel" onClick={() => setShowAddLead(false)}>Annuler</button>
+                          <motion.button className="btn-primary" onClick={handleCreateLead} whileHover={{ scale: 1.02 }}>
+                            {icons.plus} Ajouter
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
 
@@ -4333,10 +6177,12 @@ export default function Admin() {
             {/* PARTENAIRES */}
             {/* ============================================ */}
             {activeTab === 'partners' && (
-              <motion.div key="partners" {...pageTransition} className="partners-admin-section">
-                <div className="section-header">
-                  <h2>Gestion des Partenaires</h2>
-                  <p>Gérez les logos partenaires affichés sur le site</p>
+              <motion.div key="partners" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Partenaires
+                  </h3>
                   <motion.button
                     className="btn-primary"
                     onClick={() => setShowAddPartner(true)}
@@ -4592,10 +6438,12 @@ export default function Admin() {
             {/* PARAMÈTRES */}
             {/* ============================================ */}
             {activeTab === 'settings' && (
-              <motion.div key="settings" {...pageTransition} className="settings-section">
-                <div className="section-header">
-                  <h2>Paramètres du site</h2>
-                  <p>Configuration générale</p>
+              <motion.div key="settings" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Parametres
+                  </h3>
                 </div>
 
                 <div className="settings-grid">
@@ -4623,7 +6471,7 @@ export default function Admin() {
                       <span>PostgreSQL connecté</span>
                     </div>
                     <ul className="db-info">
-                      <li><strong>Tables:</strong> categories, medias, messages, settings</li>
+                      <li><strong>Tables:</strong> medias, messages, settings</li>
                       <li><strong>Médias:</strong> {totalMedias} enregistrements</li>
                       <li><strong>Messages:</strong> {messages.length} enregistrements</li>
                     </ul>

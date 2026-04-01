@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAATAL STUDIO — LinkedIn Banner</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .banner {
+    width: 1584px;
+    height: 396px;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    display: flex;
+  }
+
+  /* === PATTERN BAND — right side === */
+  .pattern-zone {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 520px;
+    overflow: hidden;
+    opacity: 0.06;
+  }
+
+  .pattern-zone img {
+    width: 520px;
+    height: 520px;
+    object-fit: cover;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+  }
+
+  /* === DIAGONAL SLICE === */
+  .diagonal-slice {
+    position: absolute;
+    right: 460px;
+    top: 0;
+    width: 200px;
+    height: 100%;
+    background: linear-gradient(105deg, #000 40%, transparent 100%);
+    z-index: 2;
+  }
+
+  /* === N LOGO MARK — large, right-aligned === */
+  .n-mark {
+    position: absolute;
+    right: 100px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 200px;
+    height: 200px;
+    z-index: 5;
+    opacity: 0.92;
+  }
+
+  .n-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+
+  /* === LEFT CONTENT === */
+  .content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 0 0 90px;
+    height: 100%;
+    max-width: 900px;
+  }
+
+  /* Thin gold rule */
+  .gold-rule {
+    width: 48px;
+    height: 2px;
+    background: #c9a84c;
+    margin-bottom: 22px;
+  }
+
+  /* Company name using actual logo image */
+  .logo-text {
+    height: 32px;
+    margin-bottom: 20px;
+    filter: brightness(0) invert(1);
+    object-fit: contain;
+    object-position: left;
+  }
+
+  /* Tagline — short, punchy */
+  .tagline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 54px;
+    letter-spacing: 3px;
+    color: #fff;
+    line-height: 1.05;
+    margin-bottom: 24px;
+    max-width: 700px;
+  }
+
+  .tagline .accent {
+    color: #c9a84c;
+  }
+
+  /* Subtle bottom line */
+  .meta {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .meta-dot {
+    width: 3px;
+    height: 3px;
+    background: #c9a84c;
+    border-radius: 50%;
+    opacity: 0.6;
+  }
+
+  /* === HORIZONTAL GOLD LINE — bottom accent === */
+  .bottom-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #c9a84c, #e8c96d 30%, transparent 70%);
+    z-index: 20;
+  }
+
+  /* === SUBTLE TOP-LEFT CORNER MARK === */
+  .corner-mark {
+    position: absolute;
+    top: 28px;
+    left: 28px;
+    width: 18px;
+    height: 18px;
+    border-left: 1.5px solid rgba(201, 168, 76, 0.3);
+    border-top: 1.5px solid rgba(201, 168, 76, 0.3);
+    z-index: 15;
+  }
+
+  .corner-mark-br {
+    position: absolute;
+    bottom: 28px;
+    right: 28px;
+    width: 18px;
+    height: 18px;
+    border-right: 1.5px solid rgba(201, 168, 76, 0.3);
+    border-bottom: 1.5px solid rgba(201, 168, 76, 0.3);
+    z-index: 15;
+  }
+
+  /* === GLOW behind N mark === */
+  .n-glow {
+    position: absolute;
+    right: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.08) 0%, transparent 60%);
+    filter: blur(40px);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  /* === VERTICAL DIVIDER === */
+  .v-divider {
+    position: absolute;
+    left: 66%;
+    top: 15%;
+    bottom: 15%;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(255,255,255,0.06), transparent);
+    z-index: 4;
+  }
+
+  /* === NOISE === */
+  .noise {
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+    pointer-events: none;
+    z-index: 30;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <!-- Noise overlay -->
+  <div class="noise"></div>
+
+  <!-- Pattern texture — right side -->
+  <div class="pattern-zone">
+    <img src="/Users/Apple/Documents/SiteWeb/Naatal/brand-identity/naatal/LOGO/PNG/Pattern/Black/Asset 11.png" alt="">
+  </div>
+
+  <!-- Diagonal fade from black over pattern -->
+  <div class="diagonal-slice"></div>
+
+  <!-- Vertical divider -->
+  <div class="v-divider"></div>
+
+  <!-- Gold glow behind N -->
+  <div class="n-glow"></div>
+
+  <!-- N logo mark — right -->
+  <div class="n-mark">
+    <img src="/Users/Apple/Documents/SiteWeb/Naatal/brand-identity/naatal/LOGO/PNG/Noir/Asset 6.png" alt="N">
+  </div>
+
+  <!-- Corner marks -->
+  <div class="corner-mark"></div>
+  <div class="corner-mark-br"></div>
+
+  <!-- Bottom gold line -->
+  <div class="bottom-line"></div>
+
+  <!-- Content — left -->
+  <div class="content">
+    <div class="gold-rule"></div>
+
+    <!-- Actual logo text -->
+    <img class="logo-text" src="/Users/Apple/Documents/SiteWeb/Naatal/brand-identity/naatal/LOGO/PNG/Noir/Asset 1.png" alt="NAATAL STUDIO">
+
+    <!-- Big tagline — minimal, impact -->
+    <div class="tagline">
+      We give your ambitions<br>a <span class="accent">Brand</span> image.
+    </div>
+
+    <!-- Meta -->
+    <div class="meta">
+      <span>Abidjan</span>
+      <span class="meta-dot"></span>
+      <span>Film</span>
+      <span class="meta-dot"></span>
+      <span>Production</span>
+      <span class="meta-dot"></span>
+      <span>naatalstudio.com</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

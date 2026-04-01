@@ -344,6 +344,63 @@ CREATE TABLE IF NOT EXISTS partners (
 CREATE INDEX IF NOT EXISTS idx_partners_active ON partners(is_active);
 
 -- ============================================
+-- TABLE: prestations
+-- Services et prestations proposées
+-- ============================================
+CREATE TABLE IF NOT EXISTS prestations (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    icon VARCHAR(50) DEFAULT 'video',
+    details JSONB DEFAULT '[]',
+    image_url TEXT,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_prestations_status ON prestations(status);
+
+DROP TRIGGER IF EXISTS update_prestations_updated_at ON prestations;
+CREATE TRIGGER update_prestations_updated_at BEFORE UPDATE ON prestations
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Données par défaut: Prestations
+INSERT INTO prestations (title, description, icon, details, display_order, status) VALUES
+('Conception', 'De l''idée au projet structuré, nous transformons votre vision en un plan de production concret et créatif.', 'conception', '["Brainstorming créatif", "Écriture de script & scénario", "Storyboard détaillé", "Note d''intention artistique", "Repérages de lieux", "Plan de travail complet"]', 1, 'active'),
+('Gestion de Projet', 'Un accompagnement stratégique de A à Z pour garantir le succès de votre production audiovisuelle.', 'gestion', '["Sélection des prestataires", "Organisation du planning", "Conseils techniques avancés", "Devis & gestion budgétaire", "Accompagnement complet", "Suivi qualité"]', 2, 'active'),
+('Pré-Production', 'La phase cruciale qui prépare chaque détail pour un tournage fluide et professionnel.', 'preproduction', '["Casting & direction artistique", "Gestion éditoriale", "Gestion budgétaire détaillée", "Scénographie & décors", "Charte graphique", "Planification logistique"]', 3, 'active'),
+('Production', 'Tournage professionnel avec une équipe expérimentée et du matériel de pointe.', 'production', '["Gestion complète de tournage", "Location d''espace avec équipe", "Matériel professionnel haut de gamme", "Construction de décors sur mesure", "Direction de la photographie", "Captation multi-caméras"]', 4, 'active'),
+('Post-Production', 'Sublimer vos images avec un montage créatif et une finition irréprochable.', 'postproduction', '["Montage créatif & narratif", "Étalonnage colorimétrique", "Mixage sonore professionnel", "Motion design & effets visuels", "Sous-titrage & localisation", "Exports multi-formats"]', 5, 'active'),
+('Diffusion', 'Optimiser la distribution de votre contenu pour atteindre votre audience cible sur tous les supports.', 'diffusion', '["Supports de diffusion adaptés", "Encodages multiples (SD/HD/4K)", "PAD régie numérique", "Distribution dématérialisée", "Stratégie de diffusion", "Optimisation multi-plateformes"]', 6, 'active')
+ON CONFLICT DO NOTHING;
+
+-- ============================================
+-- TABLE: tasks
+-- Gestion des tâches / todo
+-- ============================================
+CREATE TABLE IF NOT EXISTS tasks (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'todo' CHECK (status IN ('todo', 'in_progress', 'done')),
+    priority VARCHAR(20) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+    due_date DATE,
+    assigned_to VARCHAR(255),
+    category VARCHAR(100),
+    created_by INT REFERENCES admins(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+
+DROP TRIGGER IF EXISTS update_tasks_updated_at ON tasks;
+CREATE TRIGGER update_tasks_updated_at BEFORE UPDATE ON tasks
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
 -- FIN DU SCRIPT
 -- ============================================
 SELECT 'Base de données NAATAL initialisée avec succès!' as status;

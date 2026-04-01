@@ -41,10 +41,10 @@ const createMessage = async (req, res) => {
   try {
     const { name, email, phone, subject, message } = req.body;
     
-    if (!name || !email || !message) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Nom, email et message sont requis' 
+    if (!name || !message) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nom et message sont requis'
       });
     }
     
@@ -52,7 +52,7 @@ const createMessage = async (req, res) => {
       INSERT INTO messages (name, email, phone, subject, message)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
-    `, [name, email, phone, subject, message]);
+    `, [name, email || '', phone, subject, message]);
     
     res.status(201).json({ 
       success: true, 

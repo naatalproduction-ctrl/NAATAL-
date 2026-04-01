@@ -703,6 +703,13 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
   const [wrapperSize, setWrapperSize] = useState({ width: 0, height: 0 });
   const scrollbarDragRef = useRef(null); // { axis: 'x'|'y', startMouse, startPan }
   const saveTimeoutRef = useRef(null);
+  // Touch support refs
+  const lastTapRef = useRef(0); // for double-tap detection
+  const touchStartRef = useRef(null); // { x, y, time, id } for single-finger drag
+  const pinchStartRef = useRef(null); // { dist, zoom, panX, panY, midX, midY } for pinch-to-zoom
+  const touchPanRef = useRef(null); // { x, y } for two-finger pan
+  const longPressTimerRef = useRef(null); // for long-press context menu
+  const longPressElementRef = useRef(null); // element id for long-press
   const elementsRef = useRef(elements);
   const zoomRef = useRef(zoom);
   const panOffsetRef = useRef(panOffset);
@@ -713,6 +720,24 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { panOffsetRef.current = panOffset; }, [panOffset]);
   useEffect(() => { boardIdRef.current = boardId; }, [boardId]);
+
+  // Prevent native browser zoom on storyboard page (iOS pinch-to-zoom)
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="viewport"]');
+    const original = meta?.getAttribute('content');
+    if (meta) {
+      meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    }
+    // Also prevent gesturestart (Safari)
+    const preventGesture = (e) => e.preventDefault();
+    document.addEventListener('gesturestart', preventGesture, { passive: false });
+    document.addEventListener('gesturechange', preventGesture, { passive: false });
+    return () => {
+      if (meta && original) meta.setAttribute('content', original);
+      document.removeEventListener('gesturestart', preventGesture);
+      document.removeEventListener('gesturechange', preventGesture);
+    };
+  }, []);
 
   // Track wrapper dimensions for scrollbar calculations
   useEffect(() => {
@@ -754,7 +779,7 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
     };
   }, [elements]);
 
-  // Close attach menu on click outside
+  // Close attach menu on click/touch outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (attachMenuRef.current && !attachMenuRef.current.contains(e.target)) {
@@ -763,11 +788,15 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
     };
     if (showAttachMenu) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
     }
   }, [showAttachMenu]);
 
-  // Close font menu on click outside
+  // Close font menu on click/touch outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (fontMenuRef.current && !fontMenuRef.current.contains(e.target)) {
@@ -776,14 +805,18 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
     };
     if (showFontMenu) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
     }
   }, [showFontMenu]);
 
   // Close font/size menus when selection changes
   useEffect(() => { setShowFontMenu(false); setShowSizeMenu(false); setContextMenu(null); }, [selectedId]);
 
-  // Close context menu on click outside or scroll
+  // Close context menu on click/touch outside or scroll
   useEffect(() => {
     if (!contextMenu) return;
     const handleClose = (e) => {
@@ -793,9 +826,11 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
     };
     const handleScroll = () => setContextMenu(null);
     document.addEventListener('mousedown', handleClose);
+    document.addEventListener('touchstart', handleClose);
     document.addEventListener('wheel', handleScroll);
     return () => {
       document.removeEventListener('mousedown', handleClose);
+      document.removeEventListener('touchstart', handleClose);
       document.removeEventListener('wheel', handleScroll);
     };
   }, [contextMenu]);
@@ -1012,7 +1047,7 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
       type: ELEMENT_TYPES.TEXT,
       x, y,
       width: 250, height: 30,
-      content: 'Double-cliquez pour editer',
+      content: 'Texte',
       fontSize: 14, fontWeight: 'normal', color: '#1d1d1f',
     };
     const newElements = [...elements, newElement];
@@ -1893,6 +1928,301 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
     }
   }, [tool, getCanvasCoords]);
 
+  // ---- TOUCH EVENT HANDLERS (mobile support) ----
+
+  // Helper: get distance between two touch points
+  const getTouchDistance = (t1, t2) => {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // Helper: get midpoint between two touch points
+  const getTouchMidpoint = (t1, t2) => ({
+    x: (t1.clientX + t2.clientX) / 2,
+    y: (t1.clientY + t2.clientY) / 2,
+  });
+
+  // Touch start on canvas wrapper
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      // Two-finger: pinch-to-zoom or pan
+      e.preventDefault();
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      const mid = getTouchMidpoint(e.touches[0], e.touches[1]);
+      pinchStartRef.current = {
+        dist,
+        zoom: zoomRef.current,
+        panX: panOffsetRef.current.x,
+        panY: panOffsetRef.current.y,
+        midX: mid.x,
+        midY: mid.y,
+      };
+      touchPanRef.current = { x: mid.x, y: mid.y };
+      // Cancel any single-finger drag/draw
+      setDragInfo(null);
+      setDrawInfo(null);
+      drawInfoRef.current = null;
+      setMarqueeInfo(null);
+      marqueeRef.current = null;
+      return;
+    }
+
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now(), id: touch.identifier };
+    }
+  }, []);
+
+  // Touch move on canvas wrapper
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      const mid = getTouchMidpoint(e.touches[0], e.touches[1]);
+
+      if (pinchStartRef.current) {
+        // Pinch-to-zoom centered on pinch midpoint
+        const rect = wrapperRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        const scale = dist / pinchStartRef.current.dist;
+        const newZoom = Math.min(3, Math.max(0.25, pinchStartRef.current.zoom * scale));
+
+        // Point on canvas under the original pinch midpoint
+        const cursorX = pinchStartRef.current.midX - rect.left;
+        const cursorY = pinchStartRef.current.midY - rect.top;
+        const pointX = (cursorX - pinchStartRef.current.panX) / pinchStartRef.current.zoom;
+        const pointY = (cursorY - pinchStartRef.current.panY) / pinchStartRef.current.zoom;
+
+        // Pan delta from finger movement
+        const panDeltaX = mid.x - pinchStartRef.current.midX;
+        const panDeltaY = mid.y - pinchStartRef.current.midY;
+
+        const newPanX = cursorX - pointX * newZoom + panDeltaX;
+        const newPanY = cursorY - pointY * newZoom + panDeltaY;
+
+        setZoom(newZoom);
+        setPanOffset({ x: newPanX, y: newPanY });
+      }
+      return;
+    }
+
+    if (e.touches.length === 1) {
+      // Cancel long-press if finger moved significantly
+      if (longPressTimerRef.current && touchStartRef.current) {
+        const touch = e.touches[0];
+        const dx = Math.abs(touch.clientX - touchStartRef.current.x);
+        const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+        if (dx > 10 || dy > 10) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+      }
+      // Single-finger move: delegate to mouse move logic for drag/resize/draw
+      const touch = e.touches[0];
+      // Create a synthetic mouse-like event
+      handleMouseMove({
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: () => {},
+      });
+    }
+  }, [handleMouseMove]);
+
+  // Touch end on canvas wrapper
+  const handleTouchEnd = useCallback((e) => {
+    // Reset pinch state when fingers lift
+    if (e.touches.length < 2) {
+      pinchStartRef.current = null;
+      touchPanRef.current = null;
+    }
+
+    // Clear long-press timer
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+
+    if (e.touches.length === 0) {
+      // Check for canvas tap before finalizing (tool placement)
+      const touchStart = touchStartRef.current;
+      if (touchStart) {
+        const ct = e.changedTouches[0];
+        if (ct) {
+          const dx = Math.abs(ct.clientX - touchStart.x);
+          const dy = Math.abs(ct.clientY - touchStart.y);
+          const elapsed = Date.now() - touchStart.time;
+
+          if (dx < 10 && dy < 10 && elapsed < 300) {
+            // It was a tap — check if it landed on the canvas (not on an element or UI)
+            const target = e.target;
+            const hitElement = target.closest('.sb-element');
+            const hitUI = target.closest('.sb-topbar, .sb-sub-toolbar, .sb-text-options, .sb-context-menu, .sb-attach-menu, .sb-link-modal');
+            const isCanvas = !hitElement && !hitUI;
+            if (isCanvas) {
+              const { x, y } = getCanvasCoords(ct.clientX, ct.clientY);
+              if (tool === 'text') { addText(x, y); }
+              else if (tool === 'sticky') { addSticky(x, y); }
+              else if (tool === 'shape') { addShape(x, y); }
+              else if (tool === 'link') { addLink(x, y); }
+              else if (tool === 'select') {
+                // Deselect on empty canvas tap
+                if (marqueeUsedRef.current) { marqueeUsedRef.current = false; }
+                else {
+                  setSelectedId(null);
+                  setSelectedIds(new Set());
+                  setEditingId(null);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // All fingers lifted - finalize any drag/resize like mouse up
+      handleMouseUp();
+      touchStartRef.current = null;
+    }
+  }, [handleMouseUp, tool, getCanvasCoords, addText, addSticky, addShape, addLink]);
+
+  // Touch start on an element (for dragging + long-press context menu)
+  const handleElementTouchStart = useCallback((e, id) => {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now(), id: touch.identifier };
+
+    // Long-press detection: show context menu after 500ms
+    longPressElementRef.current = id;
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = setTimeout(() => {
+      // Only trigger if finger hasn't moved much
+      const ts = touchStartRef.current;
+      if (ts) {
+        // Position menu centered above the element
+        const el = elementsRef.current.find(e => e.id === id);
+        const wrapperRect = wrapperRef.current?.getBoundingClientRect();
+        let menuX = ts.x, menuY = ts.y - 50;
+        if (el && wrapperRect) {
+          const elCenterX = el.x * zoomRef.current + panOffsetRef.current.x + wrapperRect.left + (el.width || 0) * zoomRef.current / 2;
+          const elTopY = el.y * zoomRef.current + panOffsetRef.current.y + wrapperRect.top;
+          menuX = Math.max(20, Math.min(window.innerWidth - 200, elCenterX - 100));
+          menuY = Math.max(60, elTopY - 10);
+        }
+        setSelectedId(id);
+        setContextMenu({ x: menuX, y: menuY, elementId: id });
+        // Cancel the drag
+        setDragInfo(null);
+        longPressTimerRef.current = null;
+      }
+    }, 500);
+
+    // Simulate mousedown for the element
+    handleElementMouseDown({
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      button: 0,
+      stopPropagation: () => {},
+      preventDefault: () => {},
+      shiftKey: false,
+      metaKey: false,
+      ctrlKey: false,
+    }, id);
+  }, [handleElementMouseDown]);
+
+  // Touch start on resize handle
+  const handleResizeTouchStart = useCallback((e, id, handle) => {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const touch = e.touches[0];
+    handleResizeMouseDown({
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      stopPropagation: () => {},
+      preventDefault: () => {},
+    }, id, handle);
+  }, [handleResizeMouseDown]);
+
+  // Double-tap detection for editing text/sticky notes
+  const handleDoubleTap = useCallback((e, el) => {
+    if (e.touches.length !== 1) return;
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapRef.current;
+    lastTapRef.current = now;
+
+    if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+      // Double-tap detected
+      e.preventDefault();
+      e.stopPropagation();
+      if (el.locked) return;
+      if (el.type === ELEMENT_TYPES.TEXT || el.type === ELEMENT_TYPES.STICKY) {
+        setEditingId(el.id);
+      }
+      if (el.type === ELEMENT_TYPES.LINK) {
+        window.open(el.url, '_blank');
+      }
+    }
+  }, []);
+
+  // Canvas touch start (for panning or starting draws/marquee)
+  const handleCanvasTouchStart = useCallback((e) => {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now(), id: touch.identifier };
+
+    // Start drawing connector or marquee (same logic as canvas mouse down)
+    if (tool === 'line' || tool === 'arrow' || tool === 'arc') {
+      const { x, y } = getCanvasCoords(touch.clientX, touch.clientY);
+      const snap = findNearestAnchor(x, y, elementsRef.current);
+      const snapX = snap ? snap.x : x;
+      const snapY = snap ? snap.y : y;
+      const info = {
+        type: tool === 'line' ? ELEMENT_TYPES.LINE : tool === 'arrow' ? ELEMENT_TYPES.ARROW : ELEMENT_TYPES.ARC,
+        startX: snapX, startY: snapY,
+        currentX: snapX, currentY: snapY,
+        sourceSnap: snap || null,
+        snapTarget: null,
+      };
+      setDrawInfo(info);
+      drawInfoRef.current = info;
+      setSelectedId(null);
+      setSelectedIds(new Set());
+      setEditingId(null);
+      return;
+    }
+
+    // Marquee for select tool
+    if (tool === 'select') {
+      const { x, y } = getCanvasCoords(touch.clientX, touch.clientY);
+      const info = { startX: x, startY: y, currentX: x, currentY: y };
+      setMarqueeInfo(info);
+      marqueeRef.current = info;
+      setSelectedId(null);
+      setSelectedIds(new Set());
+      setEditingId(null);
+    }
+  }, [tool, getCanvasCoords]);
+
+  // Canvas single tap is now handled in wrapper handleTouchEnd above
+
+  // Attach touch handlers to the wrapper with { passive: false }
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    wrapper.addEventListener('touchstart', handleTouchStart, { passive: false });
+    wrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
+    wrapper.addEventListener('touchend', handleTouchEnd, { passive: false });
+    return () => {
+      wrapper.removeEventListener('touchstart', handleTouchStart);
+      wrapper.removeEventListener('touchmove', handleTouchMove);
+      wrapper.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+
   // Trackpad & wheel handler (Freeform-style navigation)
   // - Two-finger scroll = pan
   // - Pinch / ctrl+wheel = zoom centered on cursor
@@ -2294,6 +2624,16 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
             }
           }
         }}
+        onTouchStart={(e) => {
+          handleDoubleTap(e, el);
+          if (!el.locked) {
+            handleElementTouchStart(e, el.id);
+          } else {
+            e.stopPropagation();
+            setSelectedId(el.id);
+            setSelectedIds(new Set());
+          }
+        }}
         onContextMenu={(e) => handleContextMenu(e, el.id)}
         onDoubleClick={(e) => {
           e.stopPropagation();
@@ -2310,6 +2650,7 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
             style={{ fontSize: el.fontSize, fontWeight: el.fontWeight, color: el.color, minHeight: 24, outline: 'none', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
             onBlur={(e) => { updateElement(el.id, { content: e.target.innerText }); setEditingId(null); }}
             onMouseDown={(e) => { if (isEditing) e.stopPropagation(); }}
+            onTouchStart={(e) => { if (isEditing) e.stopPropagation(); }}
           >{el.content}</div>
         )}
 
@@ -2336,7 +2677,7 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
 
         {/* Floating action bar for link elements (Freeform-style) */}
         {el.type === ELEMENT_TYPES.LINK && isSelected && (
-          <div className="sb-link-floating-bar" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="sb-link-floating-bar" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
             <button
               className="sb-link-floating-btn"
               onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(el.url); }}
@@ -2413,6 +2754,7 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
               style={{ outline: 'none' }}
               onBlur={(e) => { updateElement(el.id, { content: e.target.innerText }); setEditingId(null); }}
               onMouseDown={(e) => { if (isEditing) e.stopPropagation(); }}
+              onTouchStart={(e) => { if (isEditing) e.stopPropagation(); }}
             >{el.content || (isEditing ? '' : 'Note...')}</div>
           </div>
         )}
@@ -2512,6 +2854,14 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
                     const coords = getCanvasCoords(e.clientX, e.clientY);
                     setResizeInfo({ id: el.id, handle: 'p1', startX: coords.x, startY: coords.y, origX: el.x, origY: el.y, origW: el.width, origH: el.height, origX1: el.x1, origY1: el.y1 });
                   }}
+                  onTouchStart={(e) => {
+                    if (e.touches.length !== 1) return;
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const t = e.touches[0];
+                    const coords = getCanvasCoords(t.clientX, t.clientY);
+                    setResizeInfo({ id: el.id, handle: 'p1', startX: coords.x, startY: coords.y, origX: el.x, origY: el.y, origW: el.width, origH: el.height, origX1: el.x1, origY1: el.y1 });
+                  }}
                 />
                 <circle
                   cx={sx2} cy={sy2} r="5"
@@ -2519,6 +2869,14 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
                   onMouseDown={(e) => {
                     e.stopPropagation();
                     const coords = getCanvasCoords(e.clientX, e.clientY);
+                    setResizeInfo({ id: el.id, handle: 'p2', startX: coords.x, startY: coords.y, origX: el.x, origY: el.y, origW: el.width, origH: el.height, origX2: el.x2, origY2: el.y2 });
+                  }}
+                  onTouchStart={(e) => {
+                    if (e.touches.length !== 1) return;
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const t = e.touches[0];
+                    const coords = getCanvasCoords(t.clientX, t.clientY);
                     setResizeInfo({ id: el.id, handle: 'p2', startX: coords.x, startY: coords.y, origX: el.x, origY: el.y, origW: el.width, origH: el.height, origX2: el.x2, origY2: el.y2 });
                   }}
                 />
@@ -2537,6 +2895,14 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
                       setControlPointDrag(dragData);
                       controlPointDragRef.current = dragData;
                     }}
+                    onTouchStart={(e) => {
+                      if (e.touches.length !== 1) return;
+                      e.stopPropagation();
+                      e.preventDefault();
+                      const dragData = { id: el.id };
+                      setControlPointDrag(dragData);
+                      controlPointDragRef.current = dragData;
+                    }}
                   />
                   );
                 })()}
@@ -2548,14 +2914,14 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
 
         {isSelected && !isEditing && !isConnector && !el.locked && (
           <>
-            <div className="sb-handle sb-handle-nw" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'nw')} />
-            <div className="sb-handle sb-handle-ne" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'ne')} />
-            <div className="sb-handle sb-handle-sw" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'sw')} />
-            <div className="sb-handle sb-handle-se" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'se')} />
-            <div className="sb-handle sb-handle-n" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'n')} />
-            <div className="sb-handle sb-handle-s" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 's')} />
-            <div className="sb-handle sb-handle-e" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'e')} />
-            <div className="sb-handle sb-handle-w" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'w')} />
+            <div className="sb-handle sb-handle-nw" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'nw')} onTouchStart={(e) => handleResizeTouchStart(e, el.id, 'nw')} />
+            <div className="sb-handle sb-handle-ne" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'ne')} onTouchStart={(e) => handleResizeTouchStart(e, el.id, 'ne')} />
+            <div className="sb-handle sb-handle-sw" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'sw')} onTouchStart={(e) => handleResizeTouchStart(e, el.id, 'sw')} />
+            <div className="sb-handle sb-handle-se" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'se')} onTouchStart={(e) => handleResizeTouchStart(e, el.id, 'se')} />
+            <div className="sb-handle sb-handle-n" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'n')} onTouchStart={(e) => handleResizeTouchStart(e, el.id, 'n')} />
+            <div className="sb-handle sb-handle-s" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 's')} onTouchStart={(e) => handleResizeTouchStart(e, el.id, 's')} />
+            <div className="sb-handle sb-handle-e" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'e')} onTouchStart={(e) => handleResizeTouchStart(e, el.id, 'e')} />
+            <div className="sb-handle sb-handle-w" onMouseDown={(e) => handleResizeMouseDown(e, el.id, 'w')} onTouchStart={(e) => handleResizeTouchStart(e, el.id, 'w')} />
           </>
         )}
 
@@ -2564,6 +2930,7 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
           <div
             className="sb-text-options"
             onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             ref={fontMenuRef}
           >
             <div className="sb-text-opt-group">
@@ -2818,26 +3185,29 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
                 </svg>
               </button>
               {showAttachMenu && (
-                <div className="sb-attach-menu">
-                  <button className="sb-attach-item" onClick={() => { fileInputRef.current?.click(); setShowAttachMenu(false); }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-                    <span>Ajouter une photo</span>
-                  </button>
-                  <button className="sb-attach-item" onClick={() => {
-                    // Ouvrir le modal de lien au centre visible du canvas
-                    const rect = wrapperRef.current?.getBoundingClientRect();
-                    if (rect) {
-                      const centerX = (rect.width / 2 - panOffset.x) / zoom;
-                      const centerY = (rect.height / 2 - panOffset.y) / zoom;
-                      setShowLinkModal({ x: centerX, y: centerY });
-                      setLinkModalUrl('');
-                    }
-                    setShowAttachMenu(false);
-                  }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>
-                    <span>Ajouter un lien</span>
-                  </button>
-                </div>
+                <>
+                  <div className="sb-attach-overlay" onClick={() => setShowAttachMenu(false)} />
+                  <div className="sb-attach-menu" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+                    <div className="sb-attach-header">Piece jointe</div>
+                    <button className="sb-attach-item" onClick={() => { fileInputRef.current?.click(); setShowAttachMenu(false); }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+                      <span>Ajouter une photo</span>
+                    </button>
+                    <button className="sb-attach-item" onClick={() => {
+                      const rect = wrapperRef.current?.getBoundingClientRect();
+                      if (rect) {
+                        const centerX = (rect.width / 2 - panOffset.x) / zoom;
+                        const centerY = (rect.height / 2 - panOffset.y) / zoom;
+                        setShowLinkModal({ x: centerX, y: centerY });
+                        setLinkModalUrl('');
+                      }
+                      setShowAttachMenu(false);
+                    }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>
+                      <span>Ajouter un lien</span>
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -2953,6 +3323,7 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
           }}
           onClick={handleCanvasClick}
           onMouseDown={handleCanvasMouseDown}
+          onTouchStart={handleCanvasTouchStart}
         >
           <div className="storyboard-canvas-inner">
             {elements.map(renderElement)}
@@ -3205,6 +3576,7 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
             className="sb-context-menu"
             style={{ top: contextMenu.y, left: contextMenu.x }}
             onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             <button
               className={`sb-ctx-item ${isFirst ? 'disabled' : ''}`}
@@ -3270,8 +3642,8 @@ function BoardEditor({ boardId, onBack, onNewBoard, embedded = false }) {
 
       {/* Link modal */}
       {showLinkModal && (
-        <div className="sb-link-modal-overlay" onClick={() => setShowLinkModal(null)}>
-          <div className="sb-link-modal" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+        <div className="sb-link-modal-overlay" onClick={() => setShowLinkModal(null)} onTouchEnd={() => setShowLinkModal(null)}>
+          <div className="sb-link-modal" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
             <div className="sb-link-modal-icon">
               <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#86868b" strokeWidth="1.5">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />

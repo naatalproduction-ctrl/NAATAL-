@@ -13,12 +13,13 @@ export default function Contact() {
 
     const formData = new FormData(e.target)
     
+    const service = formData.get('service')
     const messageData = {
       name: formData.get('name'),
       email: formData.get('email'),
       phone: formData.get('phone'),
-      message: formData.get('message'),
-      subject: 'Contact depuis le site web'
+      message: (service ? `[Service: ${service}]\n\n` : '') + formData.get('message'),
+      subject: service ? `Demande - ${service}` : 'Contact depuis le site web'
     }
 
     try {
@@ -128,7 +129,6 @@ export default function Contact() {
                 id="email"
                 name="email"
                 placeholder="votre@email.com"
-                required
               />
             </div>
 
@@ -140,6 +140,26 @@ export default function Contact() {
                 name="phone"
                 placeholder="+225 XX XX XX XX XX"
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="service">Service video <span style={{ opacity: 0.5, fontWeight: 400, fontSize: '12px' }}>(optionnel)</span></label>
+              <select
+                id="service"
+                name="service"
+                defaultValue="Projet personnalisé"
+              >
+                <option value="Projet personnalisé" className="option-custom">Definir son propre projet</option>
+                <option value="Film Corporate Institutionnel">Film Corporate Institutionnel</option>
+                <option value="Vidéo de Recrutement & Marque Employeur">Video de Recrutement & Marque Employeur</option>
+                <option value="Film de Lancement de Produit">Film de Lancement de Produit</option>
+                <option value="Reportage d'Événement Corporate">Reportage d'Evenement Corporate</option>
+                <option value="Interview & Témoignage Client">Interview & Temoignage Client</option>
+                <option value="Vidéo Pédagogique & Formation Interne">Video Pedagogique & Formation Interne</option>
+                <option value="Publicité Digitale Courte">Publicite Digitale Courte</option>
+                <option value="Couverture de Chantier & Immobilier">Couverture de Chantier & Immobilier</option>
+                <option value="Vidéo Publicitaire">Video Publicitaire</option>
+              </select>
             </div>
 
             <div className="form-group">

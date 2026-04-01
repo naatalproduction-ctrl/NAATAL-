@@ -1,43 +1,69 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useSite } from '../context/SiteContext'
 import './Audiovisuel.css'
 
-export default function Audiovisuel() {
-  const { categories, loading } = useSite()
+// Extract YouTube video ID from any URL format
+const getYouTubeId = (url) => {
+  if (!url) return null
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
+  return match ? match[1] : null
+}
 
-  const categoryConfig = {
-    publicite: {
-      title: 'Publicite',
-      description: 'Creation de publicites cinematiques et digitales qui captivent et convertissent votre audience.',
-    },
-    documentaire: {
-      title: 'Documentaire',
-      description: 'Production de documentaires authentiques qui donnent vie a des recits inspirants et meconnus.',
-    },
-    corporate: {
-      title: 'Corporate',
-      description: 'Films institutionnels et videos d\'entreprise qui valorisent votre image de marque.',
-    }
-  }
+function VideoCard({ media, index }) {
+  const [playing, setPlaying] = useState(false)
+  const videoId = getYouTubeId(media.url)
+  const thumbnail = media.thumbnail || (videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null)
+  const isEven = index % 2 === 0
 
-  const displayOrder = ['documentaire', 'corporate', 'publicite']
+  return (
+    <motion.div
+      className={`av-item ${isEven ? 'av-item--left' : 'av-item--right'}`}
+      initial={{ opacity: 0, y: 60 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 0.1 }}
+      viewport={{ once: true, margin: '-50px' }}
+    >
+      {/* Number */}
+      <div className="av-item-number">
+        <span>0{index + 1}</span>
+      </div>
 
-  // Only show categories that have real videos
-  const displayCategories = displayOrder.map(slug => {
-    const dbCategory = categories.find(c => c.slug === slug)
-    const config = categoryConfig[slug]
-    if (!config) return null
+      {/* Video */}
+      <div className="av-item-player">
+        {playing ? (
+          <iframe
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=1`}
+            title={media.name}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <div className="av-item-thumb" onClick={() => setPlaying(true)}>
+            {thumbnail && <img src={thumbnail} alt={media.name} loading="lazy" />}
+            <div className="av-item-play">
+              <div className="av-play-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+            <div className="av-item-gradient" />
+          </div>
+        )}
+      </div>
 
-    const medias = dbCategory?.medias || []
-    if (medias.length === 0) return null
-
-    return { ...config, slug, medias }
-  }).filter(Boolean)
-
-  // Collect all videos flat for the showcase
-  const allMedias = displayCategories.flatMap(c =>
-    c.medias.map(m => ({ ...m, categoryTitle: c.title }))
+      {/* Info */}
+      <div className="av-item-info">
+        <h2>{media.name}</h2>
+      </div>
+    </motion.div>
   )
+}
+
+export default function Audiovisuel() {
+  const { medias } = useSite()
 
   return (
     <section id="audiovisuel" className="audiovisuel">
@@ -49,102 +75,37 @@ export default function Audiovisuel() {
       </div>
 
       <motion.div
-        className="audiovisuel-container"
+        className="av-container"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 1 }}
         viewport={{ once: true }}
       >
+        {/* Header */}
         <motion.div
-          className="audiovisuel-header"
-          initial={{ opacity: 0, y: 50 }}
+          className="av-header"
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
         >
-          <span className="audiovisuel-label">Nos Realisations</span>
-          <motion.h1
-            initial={{ scale: 0.8, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            viewport={{ once: true }}
-          >
-            Audiovisuel
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            viewport={{ once: true }}
-          >
-            Productions video innovantes qui transforment votre vision en realite
-          </motion.p>
+          <span className="av-label">Portfolio</span>
+          <h1>Nos Realisations</h1>
+          <p>Des productions audiovisuelles qui donnent vie a vos ambitions</p>
         </motion.div>
 
-        {/* Video Showcase Grid */}
-        <div className={`audiovisuel-grid audiovisuel-grid--${Math.min(allMedias.length, 4)}`}>
-          {allMedias.map((media, index) => (
-            <motion.div
-              key={media.id}
-              className={`audiovisuel-card ${index === 0 ? 'audiovisuel-card--featured' : ''}`}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.15 * index }}
-              viewport={{ once: true }}
-            >
-              <div className="audiovisuel-card-video">
-                {media.type === 'youtube' ? (
-                  <iframe
-                    src={media.url}
-                    title={media.name}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    loading="lazy"
-                  />
-                ) : (
-                  <video
-                    muted
-                    loop
-                    playsInline
-                    preload="none"
-                    onLoadedData={(e) => e.target.play().catch(() => {})}
-                  >
-                    <source src={media.url} type="video/mp4" />
-                  </video>
-                )}
-              </div>
-              <div className="audiovisuel-card-info">
-                <span className="audiovisuel-card-tag">{media.categoryTitle}</span>
-                <h3>{media.name}</h3>
-                {media.description && <p>{media.description}</p>}
-              </div>
-            </motion.div>
+        {/* Video List - Vertical Stack */}
+        <motion.div
+          className="av-list"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          {medias.map((media, index) => (
+            <VideoCard key={media.id} media={media} index={index} />
           ))}
-        </div>
+        </motion.div>
 
-        {/* Category descriptions below */}
-        {displayCategories.length > 1 && (
-          <div className="audiovisuel-services">
-            {displayCategories.map((category, index) => (
-              <motion.div
-                key={category.slug}
-                className="audiovisuel-service"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 * index }}
-                viewport={{ once: true }}
-              >
-                <span className="audiovisuel-service-num">0{index + 1}</span>
-                <h3>{category.title}</h3>
-                <p>{category.description}</p>
-                <span className="audiovisuel-service-count">
-                  {category.medias.length} realisation{category.medias.length > 1 ? 's' : ''}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        )}
       </motion.div>
     </section>
   )

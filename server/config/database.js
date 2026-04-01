@@ -10,9 +10,9 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'naatal_db',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || '',
-  max: 20,
+  max: 40,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 10000,
   statement_timeout: 30000,
 });
 

@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAATAL STUDIO — Brand Identity</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --noir: #060606;
+      --noir-pur: #000000;
+      --or: #c9a84c;
+      --or-clair: #e8c96d;
+      --jaune: #FFD700;
+      --blanc: #ffffff;
+      --blanc-attenue: #f0f0f0;
+      --texte-sec: rgba(240,240,240,0.6);
+      --texte-muted: rgba(240,240,240,0.35);
+      --surface: rgba(255,255,255,0.03);
+      --bordure: rgba(255,255,255,0.08);
+      --or-dim: rgba(201,168,76,0.15);
+      --or-glow: rgba(201,168,76,0.25);
+      --whatsapp: #25D366;
+      --erreur: #ff6b6b;
+      --succes: #4ecdc4;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--noir);
+      color: var(--blanc-attenue);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- NAV ---- */
+    .brand-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+      background: rgba(6,6,6,0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--bordure);
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-nav-logo { height: 28px; opacity: 0.9; }
+    .brand-nav-links { display: flex; gap: 28px; }
+    .brand-nav-links a {
+      color: var(--texte-sec);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+    .brand-nav-links a:hover { color: var(--or); }
+
+    /* ---- SECTIONS ---- */
+    section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 120px 40px;
+    }
+    .section-full {
+      max-width: 100%;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--or);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--or-dim);
+    }
+
+    .section-title {
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 700;
+      letter-spacing: -1.5px;
+      color: var(--blanc);
+      margin-bottom: 16px;
+      line-height: 1.15;
+    }
+
+    .section-desc {
+      font-size: 16px;
+      color: var(--texte-sec);
+      max-width: 600px;
+      margin-bottom: 60px;
+    }
+
+    /* ---- HERO ---- */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      max-width: 100%;
+      padding: 0 40px;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, var(--or-glow) 0%, transparent 60%);
+      filter: blur(150px);
+      pointer-events: none;
+    }
+    .hero-logo {
+      width: 180px;
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero h1 {
+      font-size: clamp(48px, 6vw, 90px);
+      font-weight: 800;
+      letter-spacing: -3px;
+      color: var(--blanc);
+      line-height: 1.05;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero h1 em {
+      color: var(--jaune);
+      font-style: italic;
+    }
+    .hero .hero-sub {
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--or);
+      position: relative;
+      z-index: 1;
+    }
+    .hero-tag {
+      margin-top: 48px;
+      font-size: 13px;
+      color: var(--texte-muted);
+      letter-spacing: 0.5px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ---- MISSION ---- */
+    .mission-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .mission-card {
+      padding: 40px 32px;
+      border-radius: 20px;
+      background: var(--surface);
+      border: 1px solid var(--bordure);
+      transition: all 0.4s ease;
+    }
+    .mission-card:hover {
+      border-color: var(--or-dim);
+      transform: translateY(-4px);
+    }
+    .mission-card h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--blanc);
+      margin-bottom: 12px;
+    }
+    .mission-card p {
+      font-size: 14px;
+      color: var(--texte-sec);
+      line-height: 1.8;
+    }
+    .mission-card .card-num {
+      font-size: 40px;
+      font-weight: 800;
+      color: rgba(201,168,76,0.1);
+      margin-bottom: 20px;
+      letter-spacing: -2px;
+    }
+
+    /* ---- VALEURS ---- */
+    .valeurs-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+    }
+    .valeur-item {
+      text-align: center;
+      padding: 40px 20px;
+      border-radius: 16px;
+      border: 1px solid var(--bordure);
+      background: var(--surface);
+      transition: all 0.3s ease;
+    }
+    .valeur-item:hover {
+      border-color: var(--or-dim);
+      background: rgba(201,168,76,0.03);
+    }
+    .valeur-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .valeur-item h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--or);
+      margin-bottom: 8px;
+    }
+    .valeur-item p {
+      font-size: 12px;
+      color: var(--texte-sec);
+      line-height: 1.6;
+    }
+
+    /* ---- LOGOS ---- */
+    .logos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+    .logo-card {
+      padding: 48px 32px;
+      border-radius: 20px;
+      border: 1px solid var(--bordure);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      transition: all 0.3s ease;
+    }
+    .logo-card:hover {
+      border-color: var(--or-dim);
+    }
+    .logo-card img {
+      max-height: 60px;
+      max-width: 200px;
+      object-fit: contain;
+    }
+    .logo-card.dark-bg {
+      background: var(--noir-pur);
+    }
+    .logo-card .logo-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--texte-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .logo-card .logo-usage {
+      font-size: 12px;
+      color: var(--texte-sec);
+      text-align: center;
+    }
+
+    .logo-rules {
+      margin-top: 48px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .logo-rule {
+      padding: 28px;
+      border-radius: 12px;
+      border: 1px solid var(--bordure);
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .rule-icon {
+      font-size: 20px;
+      min-width: 28px;
+      text-align: center;
+    }
+    .logo-rule h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--blanc);
+      margin-bottom: 4px;
+    }
+    .logo-rule p {
+      font-size: 13px;
+      color: var(--texte-sec);
+    }
+
+    /* ---- COULEURS ---- */
+    .colors-main {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .color-swatch {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--bordure);
+      transition: transform 0.3s ease;
+    }
+    .color-swatch:hover {
+      transform: translateY(-4px);
+    }
+    .swatch-color {
+      height: 100px;
+      position: relative;
+    }
+    .swatch-color.bordered {
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 15px 15px 0 0;
+    }
+    .swatch-info {
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.02);
+    }
+    .swatch-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--blanc);
+      margin-bottom: 4px;
+    }
+    .swatch-hex {
+      font-size: 11px;
+      color: var(--texte-muted);
+      font-family: 'SF Mono', Menlo, monospace;
+    }
+
+    .colors-secondary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .color-sec-item {
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--bordure);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .color-sec-dot {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      min-width: 40px;
+    }
+    .color-sec-info .swatch-name { margin-bottom: 2px; }
+
+    /* Gradients */
+    .gradients-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+    .gradient-card {
+      height: 120px;
+      border-radius: 16px;
+      border: 1px solid var(--bordure);
+      display: flex;
+      align-items: flex-end;
+      padding: 20px;
+    }
+    .gradient-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--blanc);
+      background: rgba(0,0,0,0.5);
+      padding: 6px 14px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    /* ---- TYPOGRAPHIE ---- */
+    .typo-showcase {
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+    }
+    .typo-item {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 40px;
+      align-items: baseline;
+      padding-bottom: 48px;
+      border-bottom: 1px solid var(--bordure);
+    }
+    .typo-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .typo-tag {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--or);
+    }
+    .typo-specs {
+      font-size: 11px;
+      color: var(--texte-muted);
+      font-family: 'SF Mono', Menlo, monospace;
+    }
+    .typo-sample-h1 {
+      font-size: clamp(42px, 5vw, 64px);
+      font-weight: 700;
+      letter-spacing: -2px;
+      color: var(--blanc);
+      line-height: 1.1;
+    }
+    .typo-sample-h2 {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -1.5px;
+      color: var(--blanc);
+      line-height: 1.15;
+    }
+    .typo-sample-h3 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      color: var(--blanc);
+    }
+    .typo-sample-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--or);
+    }
+    .typo-sample-body {
+      font-size: 17px;
+      color: var(--texte-sec);
+      max-width: 500px;
+    }
+    .typo-sample-small {
+      font-size: 14px;
+      color: var(--texte-sec);
+    }
+    .typo-sample-caption {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      color: var(--or);
+    }
+    .typo-sample-num {
+      font-size: 64px;
+      font-weight: 800;
+      letter-spacing: -3px;
+      color: rgba(201,168,76,0.12);
+    }
+    .typo-sample-accent {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--jaune);
+      font-style: italic;
+    }
+
+    /* ---- COMPOSANTS ---- */
+    .comp-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+    }
+    .comp-card {
+      padding: 40px;
+      border-radius: 20px;
+      border: 1px solid var(--bordure);
+      background: var(--surface);
+    }
+    .comp-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--blanc);
+      margin-bottom: 24px;
+    }
+
+    /* Boutons demo */
+    .btn-demo {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+    .demo-btn-primary {
+      padding: 14px 32px;
+      border-radius: 60px;
+      background: linear-gradient(135deg, var(--or-dim), rgba(201,168,76,0.05));
+      border: 1px solid rgba(201,168,76,0.3);
+      color: var(--or);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .demo-btn-primary:hover {
+      background: linear-gradient(135deg, var(--or-glow), var(--or-dim));
+      border-color: rgba(201,168,76,0.5);
+    }
+    .demo-btn-secondary {
+      padding: 14px 32px;
+      border-radius: 60px;
+      background: transparent;
+      border: 1px solid var(--bordure);
+      color: var(--blanc);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .demo-btn-secondary:hover {
+      border-color: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.03);
+    }
+    .demo-btn-whatsapp {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--whatsapp);
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(37,211,102,0.4);
+    }
+
+    /* Cartes demo */
+    .demo-card {
+      padding: 32px;
+      border-radius: 20px;
+      background: linear-gradient(165deg, rgba(20,20,20,0.95), rgba(10,10,10,0.98));
+      border: 1px solid var(--bordure);
+      transition: all 0.4s ease;
+    }
+    .demo-card:hover {
+      border-color: var(--or-dim);
+      transform: translateY(-4px);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.5);
+    }
+    .demo-card .card-num {
+      font-size: 36px;
+      font-weight: 800;
+      color: rgba(201,168,76,0.1);
+      margin-bottom: 12px;
+    }
+    .demo-card h4 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--blanc);
+      margin-bottom: 8px;
+    }
+    .demo-card p {
+      font-size: 13px;
+      color: var(--texte-sec);
+    }
+
+    /* ---- TONE ---- */
+    .tone-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .tone-card {
+      padding: 32px;
+      border-radius: 16px;
+      border: 1px solid var(--bordure);
+    }
+    .tone-card.do { border-color: rgba(78,205,196,0.3); }
+    .tone-card.dont { border-color: rgba(255,107,107,0.3); }
+    .tone-card h4 {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .tone-card.do h4 { color: var(--succes); }
+    .tone-card.dont h4 { color: var(--erreur); }
+    .tone-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .tone-list li {
+      font-size: 14px;
+      color: var(--texte-sec);
+      padding-left: 24px;
+      position: relative;
+    }
+    .tone-list li::before {
+      position: absolute;
+      left: 0;
+      font-size: 14px;
+    }
+    .tone-card.do .tone-list li::before { content: '+ '; color: var(--succes); }
+    .tone-card.dont .tone-list li::before { content: '- '; color: var(--erreur); }
+
+    /* ---- PRESTATIONS ---- */
+    .presta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .presta-item {
+      padding: 32px;
+      border-radius: 16px;
+      border: 1px solid var(--bordure);
+      background: var(--surface);
+    }
+    .presta-item h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--or);
+      margin-bottom: 10px;
+    }
+    .presta-item p {
+      font-size: 13px;
+      color: var(--texte-sec);
+      line-height: 1.7;
+    }
+    .presta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .presta-tag {
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: var(--or-dim);
+      color: var(--or);
+      font-weight: 500;
+    }
+
+    /* ---- CONTACT ---- */
+    .contact-bar {
+      text-align: center;
+      padding: 80px 40px;
+      border-top: 1px solid var(--bordure);
+    }
+    .contact-bar p {
+      font-size: 14px;
+      color: var(--texte-sec);
+      margin-bottom: 8px;
+    }
+    .contact-bar a {
+      color: var(--or);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 1024px) {
+      .colors-main { grid-template-columns: repeat(4, 1fr); }
+      .valeurs-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+      section { padding: 80px 20px; }
+      .brand-nav { padding: 12px 20px; }
+      .brand-nav-links { display: none; }
+      .mission-grid,
+      .comp-grid,
+      .tone-grid,
+      .logo-rules { grid-template-columns: 1fr; }
+      .colors-main { grid-template-columns: repeat(2, 1fr); }
+      .colors-secondary { grid-template-columns: 1fr; }
+      .valeurs-grid { grid-template-columns: repeat(2, 1fr); }
+      .presta-grid { grid-template-columns: 1fr; }
+      .gradients-grid { grid-template-columns: 1fr; }
+      .typo-item { grid-template-columns: 1fr; gap: 12px; }
+      .logos-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="brand-nav">
+    <img src="logos/logo.png" alt="NAATAL" class="brand-nav-logo">
+    <div class="brand-nav-links">
+      <a href="#mission">Mission</a>
+      <a href="#logos">Logos</a>
+      <a href="#couleurs">Couleurs</a>
+      <a href="#typographie">Typographie</a>
+      <a href="#composants">Composants</a>
+      <a href="#tone">Ton</a>
+      <a href="#prestations">Prestations</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero section-full">
+    <img src="logos/logo.png" alt="NAATAL STUDIO" class="hero-logo">
+    <h1>Nous donnons une image<br>de <em>Marque</em> a vos<br>ambitions.</h1>
+    <span class="hero-sub">Brand Identity Guide</span>
+    <p class="hero-tag">NAATAL STUDIO — Abidjan, Cote d'Ivoire — Depuis 2024</p>
+  </section>
+
+  <!-- MISSION / VISION / VALEURS -->
+  <section id="mission">
+    <div class="section-label">01 — Fondation</div>
+    <h2 class="section-title">Mission, Vision & Valeurs</h2>
+    <p class="section-desc">Les piliers qui definissent l'identite et la direction de NAATAL STUDIO.</p>
+
+    <div class="mission-grid">
+      <div class="mission-card">
+        <div class="card-num">01</div>
+        <h3>Mission</h3>
+        <p>Offrir aux entreprises et institutions une production audiovisuelle d'excellence qui valorise leur image, raconte leur histoire et amplifie leur impact.</p>
+      </div>
+      <div class="mission-card">
+        <div class="card-num">02</div>
+        <h3>Vision</h3>
+        <p>Devenir la reference de la production audiovisuelle corporate en Afrique de l'Ouest, en alliant creativite cinematographique et rigueur professionnelle.</p>
+      </div>
+      <div class="mission-card">
+        <div class="card-num">03</div>
+        <h3>Signification</h3>
+        <p>"Naatal" signifie "Vision" en wolof. La marque incarne la capacite a voir au-dela du visible, a transformer une idee en image de marque puissante.</p>
+      </div>
+    </div>
+
+    <div class="valeurs-grid" style="margin-top: 48px;">
+      <div class="valeur-item">
+        <span class="valeur-icon">&#9733;</span>
+        <h4>Excellence</h4>
+        <p>Chaque projet est traite avec une exigence cinematographique</p>
+      </div>
+      <div class="valeur-item">
+        <span class="valeur-icon">&#10022;</span>
+        <h4>Creativite</h4>
+        <p>Des approches visuelles distinctives et memorables</p>
+      </div>
+      <div class="valeur-item">
+        <span class="valeur-icon">&#10004;</span>
+        <h4>Engagement</h4>
+        <p>Un accompagnement complet de A a Z</p>
+      </div>
+      <div class="valeur-item">
+        <span class="valeur-icon">&#9829;</span>
+        <h4>Authenticite</h4>
+        <p>Des histoires vraies qui resonnent</p>
+      </div>
+      <div class="valeur-item">
+        <span class="valeur-icon">&#9889;</span>
+        <h4>Innovation</h4>
+        <p>Technologies de pointe au service du recit</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGOS -->
+  <section id="logos">
+    <div class="section-label">02 — Logos</div>
+    <h2 class="section-title">Systeme de logos</h2>
+    <p class="section-desc">Differentes versions du logo pour chaque contexte d'utilisation.</p>
+
+    <div class="logos-grid">
+      <div class="logo-card dark-bg">
+        <img src="logos/logo.png" alt="Logo principal">
+        <span class="logo-name">Principal</span>
+        <span class="logo-usage">Usage general, site web, documents</span>
+      </div>
+      <div class="logo-card dark-bg">
+        <img src="logos/logo.jpg" alt="Logo alternatif">
+        <span class="logo-name">Alternatif</span>
+        <span class="logo-usage">Fond sombre, print</span>
+      </div>
+      <div class="logo-card dark-bg">
+        <img src="logos/Logo 2.png" alt="Logo secondaire">
+        <span class="logo-name">Secondaire</span>
+        <span class="logo-usage">Variante, supports complementaires</span>
+      </div>
+      <div class="logo-card dark-bg">
+        <img src="logos/logo 3.png" alt="Logo compact">
+        <span class="logo-name">Compact "N"</span>
+        <span class="logo-usage">Favicon, admin, icone app, espaces reduits</span>
+      </div>
+      <div class="logo-card dark-bg">
+        <img src="logos/logo app.png" alt="Logo app">
+        <span class="logo-name">Application</span>
+        <span class="logo-usage">Reseaux sociaux, applications mobiles</span>
+      </div>
+    </div>
+
+    <div class="logo-rules">
+      <div class="logo-rule">
+        <span class="rule-icon">&#9989;</span>
+        <div>
+          <h4>Zone de protection</h4>
+          <p>Espace minimum egal a la hauteur du "N" autour du logo</p>
+        </div>
+      </div>
+      <div class="logo-rule">
+        <span class="rule-icon">&#9989;</span>
+        <div>
+          <h4>Taille minimale</h4>
+          <p>80px (logo complet) / 32px (icone "N")</p>
+        </div>
+      </div>
+      <div class="logo-rule">
+        <span class="rule-icon">&#10060;</span>
+        <div>
+          <h4>Ne jamais deformer</h4>
+          <p>Pas d'etirement, rotation ou modification des proportions</p>
+        </div>
+      </div>
+      <div class="logo-rule">
+        <span class="rule-icon">&#10060;</span>
+        <div>
+          <h4>Fond clair interdit</h4>
+          <p>Toujours sur fond noir ou tres sombre sans adaptation</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COULEURS -->
+  <section id="couleurs">
+    <div class="section-label">03 — Couleurs</div>
+    <h2 class="section-title">Palette de couleurs</h2>
+    <p class="section-desc">L'univers chromatique de NAATAL : noir profond, or signature et blanc pur.</p>
+
+    <div class="colors-main">
+      <div class="color-swatch">
+        <div class="swatch-color" style="background:#060606;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Noir profond</div>
+          <div class="swatch-hex">#060606</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-color" style="background:#000000;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Noir pur</div>
+          <div class="swatch-hex">#000000</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-color" style="background:#c9a84c;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Or NAATAL</div>
+          <div class="swatch-hex">#c9a84c</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-color" style="background:#e8c96d;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Or clair</div>
+          <div class="swatch-hex">#e8c96d</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-color" style="background:#FFD700;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Jaune Marque</div>
+          <div class="swatch-hex">#FFD700</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-color bordered" style="background:#ffffff;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Blanc</div>
+          <div class="swatch-hex">#ffffff</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-color bordered" style="background:#f0f0f0;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Blanc attenue</div>
+          <div class="swatch-hex">#f0f0f0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="colors-secondary">
+      <div class="color-sec-item">
+        <div class="color-sec-dot" style="background:rgba(240,240,240,0.6);"></div>
+        <div class="color-sec-info">
+          <div class="swatch-name">Texte secondaire</div>
+          <div class="swatch-hex">rgba(240,240,240,0.6)</div>
+        </div>
+      </div>
+      <div class="color-sec-item">
+        <div class="color-sec-dot" style="background:rgba(240,240,240,0.35);"></div>
+        <div class="color-sec-info">
+          <div class="swatch-name">Texte discret</div>
+          <div class="swatch-hex">rgba(240,240,240,0.35)</div>
+        </div>
+      </div>
+      <div class="color-sec-item">
+        <div class="color-sec-dot" style="background:rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3);"></div>
+        <div class="color-sec-info">
+          <div class="swatch-name">Or attenue</div>
+          <div class="swatch-hex">rgba(201,168,76,0.15)</div>
+        </div>
+      </div>
+      <div class="color-sec-item">
+        <div class="color-sec-dot" style="background:#25D366;"></div>
+        <div class="color-sec-info">
+          <div class="swatch-name">Vert WhatsApp</div>
+          <div class="swatch-hex">#25D366</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gradients-grid">
+      <div class="gradient-card" style="background: linear-gradient(165deg, rgba(20,20,20,0.95), rgba(10,10,10,0.98));">
+        <span class="gradient-label">Fond de carte</span>
+      </div>
+      <div class="gradient-card" style="background: linear-gradient(165deg, rgba(25,22,15,0.98), rgba(12,12,10,0.98));">
+        <span class="gradient-label">Carte hover</span>
+      </div>
+      <div class="gradient-card" style="background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05));">
+        <span class="gradient-label">Bouton CTA</span>
+      </div>
+      <div class="gradient-card" style="background: linear-gradient(to bottom, #060606, rgba(6,6,6,0.92) 50%, #060606);">
+        <span class="gradient-label">Overlay video</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPOGRAPHIE -->
+  <section id="typographie">
+    <div class="section-label">04 — Typographie</div>
+    <h2 class="section-title">Systeme typographique</h2>
+    <p class="section-desc">Hierarchie et styles de texte pour une communication claire et impactante.</p>
+
+    <div class="typo-showcase">
+      <div class="typo-item">
+        <div class="typo-meta">
+          <span class="typo-tag">H1 — Hero</span>
+          <span class="typo-specs">clamp(42px, 5.5vw, 72px)<br>Weight 700 / -2px</span>
+        </div>
+        <span class="typo-sample-h1">Nous donnons une image de Marque</span>
+      </div>
+      <div class="typo-item">
+        <div class="typo-meta">
+          <span class="typo-tag">H2 — Section</span>
+          <span class="typo-specs">48px<br>Weight 700 / -1.5px</span>
+        </div>
+        <span class="typo-sample-h2">Nos Prestations</span>
+      </div>
+      <div class="typo-item">
+        <div class="typo-meta">
+          <span class="typo-tag">H3 — Carte</span>
+          <span class="typo-specs">24px<br>Weight 600 / -0.5px</span>
+        </div>
+        <span class="typo-sample-h3">Production audiovisuelle</span>
+      </div>
+      <div class="typo-item">
+        <div class="typo-meta">
+          <span class="typo-tag">Label</span>
+          <span class="typo-specs">11px uppercase<br>Weight 600 / +4px</span>
+        </div>
+        <span class="typo-sample-label">Ce que nous faisons</span>
+      </div>
+      <div class="typo-item">
+        <div class="typo-meta">
+          <span class="typo-tag">Body</span>
+          <span class="typo-specs">17px<br>Weight 400 / +0.3px</span>
+        </div>
+        <span class="typo-sample-body">Tournage professionnel avec une equipe experimentee et du materiel de pointe pour vos projets.</span>
+      </div>
+      <div class="typo-item">
+        <div class="typo-meta">
+          <span class="typo-tag">Caption</span>
+          <span class="typo-specs">12px<br>Weight 500 / +0.5px</span>
+        </div>
+        <span class="typo-sample-caption">4 realisations</span>
+      </div>
+      <div class="typo-item">
+        <div class="typo-meta">
+          <span class="typo-tag">Numero</span>
+          <span class="typo-specs">48-64px<br>Weight 800 / -3px</span>
+        </div>
+        <span class="typo-sample-num">01</span>
+      </div>
+      <div class="typo-item">
+        <div class="typo-meta">
+          <span class="typo-tag">Accent</span>
+          <span class="typo-specs">Italic<br>#FFD700</span>
+        </div>
+        <span class="typo-sample-accent">Marque</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPOSANTS -->
+  <section id="composants">
+    <div class="section-label">05 — Composants</div>
+    <h2 class="section-title">Elements d'interface</h2>
+    <p class="section-desc">Les composants visuels qui definissent l'experience NAATAL.</p>
+
+    <div class="comp-grid">
+      <div class="comp-card">
+        <h3>Boutons</h3>
+        <div class="btn-demo">
+          <button class="demo-btn-primary">Decouvrir nos Realisations</button>
+          <button class="demo-btn-secondary">Nous Contacter</button>
+          <button class="demo-btn-whatsapp">&#9742;</button>
+        </div>
+      </div>
+      <div class="comp-card">
+        <h3>Carte prestation</h3>
+        <div class="demo-card">
+          <div class="card-num">01</div>
+          <h4>Conception</h4>
+          <p>De l'idee au projet structure, nous transformons votre vision en un plan de production concret.</p>
+        </div>
+      </div>
+      <div class="comp-card">
+        <h3>Effets visuels</h3>
+        <div style="display:flex; gap:16px; flex-wrap: wrap;">
+          <div style="width:120px; height:80px; border-radius:12px; background:radial-gradient(circle, rgba(201,168,76,0.25), transparent 70%); display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:11px; color:var(--texte-muted);">Glow</span>
+          </div>
+          <div style="width:120px; height:80px; border-radius:12px; background-image: linear-gradient(rgba(201,168,76,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(201,168,76,0.06) 1px, transparent 1px); background-size: 20px 20px; display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:11px; color:var(--texte-muted);">Grille</span>
+          </div>
+          <div style="width:120px; height:80px; border-radius:12px; background:rgba(255,255,255,0.03); backdrop-filter:blur(20px); border:1px solid var(--bordure); display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:11px; color:var(--texte-muted);">Glass</span>
+          </div>
+        </div>
+      </div>
+      <div class="comp-card">
+        <h3>Animations</h3>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="font-size:13px; color:var(--texte-sec); padding:12px 16px; border-radius:8px; border:1px solid var(--bordure);">
+            <strong style="color:var(--or);">Entree</strong> — fadeInUp, 0.6-0.8s, ease-out
+          </div>
+          <div style="font-size:13px; color:var(--texte-sec); padding:12px 16px; border-radius:8px; border:1px solid var(--bordure);">
+            <strong style="color:var(--or);">Stagger</strong> — 0.1s de delai entre chaque element
+          </div>
+          <div style="font-size:13px; color:var(--texte-sec); padding:12px 16px; border-radius:8px; border:1px solid var(--bordure);">
+            <strong style="color:var(--or);">Hover</strong> — scale(1.02), cubic-bezier, 0.3s
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TONE OF VOICE -->
+  <section id="tone">
+    <div class="section-label">06 — Ton & voix</div>
+    <h2 class="section-title">Tone of Voice</h2>
+    <p class="section-desc">Professionnel mais accessible. Confiant sans arrogance. Direct et inspire.</p>
+
+    <div class="tone-grid">
+      <div class="tone-card do">
+        <h4>A faire</h4>
+        <ul class="tone-list">
+          <li>Nous donnons une image de Marque a vos ambitions</li>
+          <li>Production audiovisuelle d'excellence</li>
+          <li>Transformons votre vision en realite</li>
+          <li>Tournage professionnel avec materiel de pointe</li>
+          <li>Un accompagnement creatif de A a Z</li>
+        </ul>
+      </div>
+      <div class="tone-card dont">
+        <h4>A eviter</h4>
+        <ul class="tone-list">
+          <li>Nous faisons des videos</li>
+          <li>On est les meilleurs du marche</li>
+          <li>Contactez-nous pour un devis gratuit !!!</li>
+          <li>On a du bon matos</li>
+          <li>N'hesitez pas a nous contacter</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRESTATIONS -->
+  <section id="prestations">
+    <div class="section-label">07 — Services</div>
+    <h2 class="section-title">Prestations</h2>
+    <p class="section-desc">L'ensemble des services proposes par NAATAL STUDIO.</p>
+
+    <div class="presta-grid">
+      <div class="presta-item">
+        <h4>Conception</h4>
+        <p>Brainstorming, script, storyboard, note d'intention, reperages, plan de travail</p>
+      </div>
+      <div class="presta-item">
+        <h4>Production</h4>
+        <p>Tournage complet, materiel professionnel, decors sur mesure, captation multi-cameras</p>
+      </div>
+      <div class="presta-item">
+        <h4>Post-Production</h4>
+        <p>Montage creatif, etalonnage, mixage sonore, motion design, sous-titrage, exports</p>
+      </div>
+    </div>
+
+    <h3 style="font-size: 20px; font-weight: 600; color: var(--blanc); margin: 48px 0 24px;">Services video specifiques</h3>
+    <div class="presta-tags" style="display: flex; flex-wrap: wrap; gap: 10px;">
+      <span class="presta-tag">Film Corporate Institutionnel</span>
+      <span class="presta-tag">Video de Recrutement & Marque Employeur</span>
+      <span class="presta-tag">Film de Lancement de Produit</span>
+      <span class="presta-tag">Reportage d'Evenement Corporate</span>
+      <span class="presta-tag">Interview & Temoignage Client</span>
+      <span class="presta-tag">Video Pedagogique & Formation Interne</span>
+      <span class="presta-tag">Publicite Digitale Courte</span>
+      <span class="presta-tag">Couverture de Chantier & Immobilier</span>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <div class="contact-bar">
+    <p>NAATAL STUDIO — Abidjan, Cote d'Ivoire</p>
+    <p><a href="mailto:info.naatalstudio@gmail.com">info.naatalstudio@gmail.com</a> &nbsp;|&nbsp; <a href="tel:+2250719956586">+225 07 19 95 65 86</a></p>
+    <p style="margin-top: 16px; color: var(--texte-muted); font-size: 12px;">
+      <a href="https://naatalstudio.com" style="color: var(--texte-muted);">naatalstudio.com</a> &nbsp;&bull;&nbsp; Brand Identity Guide &nbsp;&bull;&nbsp; Mars 2026
+    </p>
+  </div>
+
+</body>
+</html>

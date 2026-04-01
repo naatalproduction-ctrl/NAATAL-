@@ -87,7 +87,7 @@ See `.env.example` and `server/.env.example` for templates.
 ### Server
 - **Host:** `$NAATAL_DEPLOY_HOST` (serveur tribalprint)
 - **Domain:** `naatalstudio.com` (SSL via Certbot)
-- **Path:** tout est dans `/var/www/naatal/` (frontend + backend + uploads)
+- **Path:** `/var/www/naatal/dist/` (frontend), `/var/www/naatal/server/` (backend + uploads)
 - **Backend:** Express sur port `5002`, géré par PM2 (`naatal-api`)
 - **Database:** PostgreSQL `naatal_db`, user `naatal_user`
 - **Nginx:** proxy `/api/` → `127.0.0.1:5002`, SPA `try_files`, cache assets
@@ -97,13 +97,13 @@ See `.env.example` and `server/.env.example` for templates.
 **Frontend only** (après modif de fichiers `src/`):
 ```bash
 VITE_API_URL=https://naatalstudio.com/api npm run build
-sshpass -p 'REDACTED' rsync -avz --delete --exclude='server.js' --exclude='package.json' --exclude='package-lock.json' --exclude='node_modules' --exclude='.env' --exclude='.env.example' --exclude='config' --exclude='controllers' --exclude='middleware' --exclude='models' --exclude='routes' --exclude='uploads' --exclude='init.sql' -e "ssh -o StrictHostKeyChecking=no" dist/ $NAATAL_DEPLOY_HOST:/var/www/naatal/
+sshpass -p 'REDACTED' rsync -avz --delete --exclude='server.js' --exclude='package.json' --exclude='package-lock.json' --exclude='node_modules' --exclude='.env' --exclude='.env.example' --exclude='config' --exclude='controllers' --exclude='middleware' --exclude='models' --exclude='routes' --exclude='uploads' --exclude='init.sql' -e "ssh -o StrictHostKeyChecking=no" dist/ $NAATAL_DEPLOY_HOST:/var/www/naatal/dist/
 ```
 
 **Backend only** (après modif de fichiers `server/`):
 ```bash
-sshpass -p 'REDACTED' rsync -avz --exclude='node_modules' --exclude='.env' -e "ssh -o StrictHostKeyChecking=no" server/ $NAATAL_DEPLOY_HOST:/var/www/naatal/
-sshpass -p 'REDACTED' ssh -o StrictHostKeyChecking=no $NAATAL_DEPLOY_HOST "cd /var/www/naatal && pm2 restart naatal-api"
+sshpass -p 'REDACTED' rsync -avz --exclude='node_modules' --exclude='.env' -e "ssh -o StrictHostKeyChecking=no" server/ $NAATAL_DEPLOY_HOST:/var/www/naatal/server/
+sshpass -p 'REDACTED' ssh -o StrictHostKeyChecking=no $NAATAL_DEPLOY_HOST "cd /var/www/naatal/server && pm2 restart naatal-api"
 ```
 
 **Full deploy** (frontend + backend):
@@ -111,11 +111,11 @@ sshpass -p 'REDACTED' ssh -o StrictHostKeyChecking=no $NAATAL_DEPLOY_HOST "cd /v
 # 1. Build frontend
 VITE_API_URL=https://naatalstudio.com/api npm run build
 # 2. Rsync frontend
-sshpass -p 'REDACTED' rsync -avz --delete --exclude='server.js' --exclude='package.json' --exclude='package-lock.json' --exclude='node_modules' --exclude='.env' --exclude='.env.example' --exclude='config' --exclude='controllers' --exclude='middleware' --exclude='models' --exclude='routes' --exclude='uploads' --exclude='init.sql' -e "ssh -o StrictHostKeyChecking=no" dist/ $NAATAL_DEPLOY_HOST:/var/www/naatal/
+sshpass -p 'REDACTED' rsync -avz --delete --exclude='server.js' --exclude='package.json' --exclude='package-lock.json' --exclude='node_modules' --exclude='.env' --exclude='.env.example' --exclude='config' --exclude='controllers' --exclude='middleware' --exclude='models' --exclude='routes' --exclude='uploads' --exclude='init.sql' -e "ssh -o StrictHostKeyChecking=no" dist/ $NAATAL_DEPLOY_HOST:/var/www/naatal/dist/
 # 3. Rsync backend
-sshpass -p 'REDACTED' rsync -avz --exclude='node_modules' --exclude='.env' -e "ssh -o StrictHostKeyChecking=no" server/ $NAATAL_DEPLOY_HOST:/var/www/naatal/
+sshpass -p 'REDACTED' rsync -avz --exclude='node_modules' --exclude='.env' -e "ssh -o StrictHostKeyChecking=no" server/ $NAATAL_DEPLOY_HOST:/var/www/naatal/server/
 # 4. Restart backend
-sshpass -p 'REDACTED' ssh -o StrictHostKeyChecking=no $NAATAL_DEPLOY_HOST "cd /var/www/naatal && pm2 restart naatal-api"
+sshpass -p 'REDACTED' ssh -o StrictHostKeyChecking=no $NAATAL_DEPLOY_HOST "cd /var/www/naatal/server && pm2 restart naatal-api"
 ```
 
 ### Rules

@@ -37,16 +37,8 @@ export default function Hero() {
           animate="visible"
         >
           <motion.h1 variants={itemVariants} className="hero-title">
-            <span className="hero-title-line">
-              <span className="hero-accent">Lumiere</span> en
-            </span>
-            <span className="hero-title-line">Mouvement</span>
+            Nous donnons une image de <span className="hero-accent">Marque</span> a vos ambitions.
           </motion.h1>
-          
-          <motion.p variants={itemVariants} className="hero-subtitle">
-            Production audiovisuelle et cinematographique.
-            Du concept a l'ecran, nous donnons vie a votre vision.
-          </motion.p>
           
           <motion.div 
             variants={itemVariants}

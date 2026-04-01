@@ -3,7 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="NAATAL Production - Maison de production audiovisuelle et cinematographique basee a Abidjan, Cote d'Ivoire. Documentaires, films, publicites et videos corporate." />
+    <meta name="description" content="NAATAL Studio - Maison de production audiovisuelle et cinema basee a Abidjan, Cote d'Ivoire. Films, documentaires, publicites et videos corporate." />
+    <meta name="keywords" content="production audiovisuelle, cinema, Abidjan, Cote d'Ivoire, documentaire, film, publicite, video corporate, NAATAL" />
+    <meta name="author" content="NAATAL Studio" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://naatalstudio.com/" />
+
+    <!-- Open Graph / WhatsApp / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://naatalstudio.com/" />
+    <meta property="og:title" content="NAATAL Studio - Production Audiovisuelle et Cinema" />
+    <meta property="og:description" content="Maison de production audiovisuelle et cinema basee a Abidjan, Cote d'Ivoire. Films, documentaires, publicites et videos corporate." />
+    <meta property="og:image" content="https://naatalstudio.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="NAATAL Studio" />
+    <meta property="og:locale" content="fr_CI" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NAATAL Studio - Production Audiovisuelle et Cinema" />
+    <meta name="twitter:description" content="Maison de production audiovisuelle et cinema basee a Abidjan, Cote d'Ivoire." />
+    <meta name="twitter:image" content="https://naatalstudio.com/og-image.png" />
 
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
@@ -14,10 +35,36 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="NAATAL" />
 
-    <title>NAATAL - Lumiere en Production Audiovisuelle</title>
+    <title>NAATAL Studio - Production Audiovisuelle et Cinema a Abidjan</title>
+
+    <!-- Structured Data / JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ProductionCompany",
+      "name": "NAATAL Studio",
+      "url": "https://naatalstudio.com",
+      "logo": "https://naatalstudio.com/favicon-512x512.png",
+      "image": "https://naatalstudio.com/og-image.png",
+      "description": "Maison de production audiovisuelle et cinema basee a Abidjan, Cote d'Ivoire. Films, documentaires, publicites et videos corporate.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Abidjan",
+        "addressCountry": "CI"
+      },
+      "sameAs": [],
+      "foundingLocation": "Abidjan, Cote d'Ivoire",
+      "knowsAbout": ["Production audiovisuelle", "Cinema", "Documentaire", "Publicite", "Video corporate"]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="./src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+      }
+    </script>
   </body>
 </html>

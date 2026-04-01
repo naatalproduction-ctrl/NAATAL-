@@ -1,15 +1,18 @@
-import { Component } from 'react'
+import { Component, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { SiteProvider } from './context/SiteContext'
 import Header from './components/Header'
 import Hero from './components/Hero'
 import Audiovisuel from './components/Audiovisuel'
+import Prestations from './components/Prestations'
 import Cinema from './components/Cinema'
 import Boutique from './components/Boutique'
 import Partners from './components/Partners'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
 import Admin from './components/Admin'
+import Offres from './components/Offres'
+import WhatsAppCTA from './components/WhatsAppCTA'
 import './App.css'
 
 class ErrorBoundary extends Component {
@@ -65,6 +68,15 @@ function AppContent() {
   const location = useLocation()
   const isAdminPage = location.pathname === '/admin'
 
+  useEffect(() => {
+    if (location.hash) {
+      setTimeout(() => {
+        const el = document.querySelector(location.hash)
+        if (el) el.scrollIntoView({ behavior: 'smooth' })
+      }, 150)
+    }
+  }, [location])
+
   return (
     <div className="app">
       {!isAdminPage && <Header />}
@@ -73,15 +85,19 @@ function AppContent() {
           <>
             <Hero />
             <Audiovisuel />
+            <Prestations />
+            <Offres />
             <Partners />
             <Contact />
           </>
         } />
         <Route path="/boutique" element={<Boutique />} />
         <Route path="/cinema" element={<Cinema />} />
+        <Route path="/offres" element={<Offres />} />
         <Route path="/admin" element={<Admin />} />
       </Routes>
       {!isAdminPage && <Footer />}
+      {!isAdminPage && <WhatsAppCTA />}
     </div>
   )
 }

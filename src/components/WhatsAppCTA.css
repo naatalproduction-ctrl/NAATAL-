@@ -1,0 +1,77 @@
+/* ========================================
+   WhatsApp CTA - Floating Button
+   ======================================== */
+
+.whatsapp-cta {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.whatsapp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #25D366;
+  color: #fff;
+  box-shadow:
+    0 4px 16px rgba(37, 211, 102, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  transition: box-shadow 0.3s ease;
+}
+
+.whatsapp-btn:hover {
+  box-shadow:
+    0 6px 24px rgba(37, 211, 102, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.whatsapp-btn svg {
+  width: 32px;
+  height: 32px;
+}
+
+.whatsapp-label {
+  display: inline-block;
+  padding: 10px 18px;
+  background: #25D366;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  border-radius: 30px;
+  white-space: nowrap;
+  text-decoration: none;
+  box-shadow:
+    0 4px 16px rgba(37, 211, 102, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.whatsapp-label:hover {
+  background: #20bd5a;
+}
+
+@media (max-width: 768px) {
+  .whatsapp-cta {
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .whatsapp-btn {
+    width: 52px;
+    height: 52px;
+  }
+
+  .whatsapp-btn svg {
+    width: 28px;
+    height: 28px;
+  }
+}

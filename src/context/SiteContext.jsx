@@ -9,7 +9,6 @@ const SiteContext = createContext(null);
 export function SiteProvider({ children }) {
   // État global
   const [medias, setMedias] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [messages, setMessages] = useState([]);
   const [siteInfo, setSiteInfo] = useState({});
   const [admin, setAdmin] = useState(null);
@@ -56,12 +55,9 @@ export function SiteProvider({ children }) {
   // ============================================
   const fetchMedias = useCallback(async () => {
     try {
-      const response = await mediasAPI.getGrouped();
+      const response = await mediasAPI.getAll();
       if (response.success) {
-        setCategories(response.data);
-        // Extraire tous les médias dans une liste plate
-        const allMedias = response.data.flatMap(cat => cat.medias || []);
-        setMedias(allMedias);
+        setMedias(response.data);
       }
     } catch (err) {
       console.error('Erreur chargement médias:', err);
@@ -102,11 +98,6 @@ export function SiteProvider({ children }) {
     } catch (err) {
       return { success: false, error: err.message };
     }
-  };
-
-  const getMediasByCategory = (categorySlug) => {
-    const category = categories.find(c => c.slug === categorySlug);
-    return category?.medias || [];
   };
 
   // ============================================
@@ -211,7 +202,6 @@ export function SiteProvider({ children }) {
   const value = {
     // État
     medias,
-    categories,
     messages,
     siteInfo,
     admin,
@@ -228,7 +218,6 @@ export function SiteProvider({ children }) {
     addMedia,
     updateMedia,
     deleteMedia,
-    getMediasByCategory,
     
     // Messages
     fetchMessages,

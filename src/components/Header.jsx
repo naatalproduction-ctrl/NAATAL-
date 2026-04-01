@@ -45,7 +45,9 @@ export default function Header() {
   const menuItems = [
     { label: 'Accueil', href: '#hero', type: 'anchor' },
     { label: 'Audiovisuel', href: '#audiovisuel', type: 'anchor' },
+    { label: 'Prestations', href: '#prestations', type: 'anchor' },
     { label: 'Cinéma', href: '/cinema', type: 'route' },
+    { label: 'Offres', href: '#offres', type: 'anchor' },
     { label: 'Boutique', href: '/boutique', type: 'route' },
     { label: 'Contact', href: '#contact', type: 'anchor' }
   ]

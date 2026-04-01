@@ -102,16 +102,7 @@ export const usersAPI = {
 export const mediasAPI = {
   // Récupérer tous les médias
   getAll: () => request('/medias'),
-  
-  // Récupérer les médias groupés par catégorie
-  getGrouped: () => request('/medias/grouped'),
-  
-  // Récupérer les catégories
-  getCategories: () => request('/medias/categories'),
-  
-  // Récupérer les médias par catégorie
-  getByCategory: (categorySlug) => request(`/medias/category/${categorySlug}`),
-  
+
   // Récupérer un média par ID
   getById: (id) => request(`/medias/${id}`),
   
@@ -171,6 +162,33 @@ export const messagesAPI = {
   deleteAllArchived: () => request('/messages/archived', {
     method: 'DELETE',
   }),
+};
+
+// ============================================
+// LEADS POWER API
+// ============================================
+export const leadsAPI = {
+  getAll: (status) => request(status ? `/leads?status=${status}` : '/leads'),
+  getStats: () => request('/leads/stats'),
+  getById: (id) => request(`/leads/${id}`),
+  create: (data) => request('/leads', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => request(`/leads/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => request(`/leads/${id}`, { method: 'DELETE' }),
+};
+
+// ============================================
+// PROSPECTS API (Prospection Google Maps)
+// ============================================
+export const prospectsAPI = {
+  search: (data) => request('/prospects/search', { method: 'POST', body: JSON.stringify(data) }),
+  searchGoogle: (data) => request('/prospects/search/google', { method: 'POST', body: JSON.stringify(data) }),
+  getAll: (status) => request(status ? `/prospects?status=${status}` : '/prospects'),
+  getStats: () => request('/prospects/stats'),
+  save: (data) => request('/prospects', { method: 'POST', body: JSON.stringify(data) }),
+  saveBulk: (prospects) => request('/prospects/bulk', { method: 'POST', body: JSON.stringify({ prospects }) }),
+  update: (id, data) => request(`/prospects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => request(`/prospects/${id}`, { method: 'DELETE' }),
+  convert: (id) => request(`/prospects/${id}/convert`, { method: 'POST' }),
 };
 
 // ============================================
@@ -467,6 +485,69 @@ export const partnersAPI = {
 };
 
 // ============================================
+// API PRESTATIONS
+// ============================================
+export const prestationsAPI = {
+  getAll: () => request('/prestations'),
+  getActive: () => request('/prestations/public'),
+  getById: (id) => request(`/prestations/${id}`),
+  create: (data) => request('/prestations', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => request(`/prestations/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id) => request(`/prestations/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// ============================================
+// API OFFRES
+// ============================================
+export const offresAPI = {
+  getAll: () => request('/offres'),
+  getActive: () => request('/offres/public'),
+  getById: (id) => request(`/offres/${id}`),
+  create: (data) => request('/offres', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => request(`/offres/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id) => request(`/offres/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// ============================================
+// API TÂCHES
+// ============================================
+export const tasksAPI = {
+  getAll: (filters = {}) => {
+    const params = new URLSearchParams(filters).toString();
+    return request(`/tasks${params ? `?${params}` : ''}`);
+  },
+  getStats: () => request('/tasks/stats'),
+  getById: (id) => request(`/tasks/${id}`),
+  create: (data) => request('/tasks', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => request(`/tasks/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id) => request(`/tasks/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// ============================================
 // HEALTH CHECK
 // ============================================
 export const checkAPIHealth = () => request('/health');
@@ -484,5 +565,8 @@ export default {
   boutique: boutiqueAPI,
   storyboard: storyboardAPI,
   uploads: uploadsAPI,
+  prestations: prestationsAPI,
+  offres: offresAPI,
+  tasks: tasksAPI,
   health: checkAPIHealth,
 };

@@ -23,6 +23,11 @@ const boutiqueRoutes = require('./routes/boutique');
 const uploadsRoutes = require('./routes/uploads');
 const storyboardRoutes = require('./routes/storyboard');
 const partnersRoutes = require('./routes/partners');
+const prestationsRoutes = require('./routes/prestations');
+const tasksRoutes = require('./routes/tasks');
+const leadsRoutes = require('./routes/leads');
+const prospectsRoutes = require('./routes/prospects');
+const offresRoutes = require('./routes/offres');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -65,7 +70,7 @@ app.use('/api/auth/login', authLimiter);
 // Rate limiting sur le formulaire de contact
 const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1h
-  max: 5,
+  max: 30,
   message: { success: false, error: 'Trop de messages envoyés, réessayez plus tard' }
 });
 app.use('/api/messages', contactLimiter);
@@ -105,6 +110,11 @@ app.use('/api/boutique', boutiqueRoutes);
 app.use('/api/uploads', uploadsRoutes);
 app.use('/api/storyboard', storyboardRoutes);
 app.use('/api/partners', partnersRoutes);
+app.use('/api/prestations', prestationsRoutes);
+app.use('/api/tasks', tasksRoutes);
+app.use('/api/leads', leadsRoutes);
+app.use('/api/prospects', prospectsRoutes);
+app.use('/api/offres', offresRoutes);
 
 // Route de test
 app.get('/api', (req, res) => {

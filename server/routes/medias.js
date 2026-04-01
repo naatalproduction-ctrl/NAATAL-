@@ -6,20 +6,14 @@ const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
 const {
   getAllMedias,
-  getMediasByCategory,
   getMediaById,
   createMedia,
   updateMedia,
-  deleteMedia,
-  getAllCategories,
-  getMediasGroupedByCategory
+  deleteMedia
 } = require('../controllers/mediasController');
 
 // Routes publiques
 router.get('/', getAllMedias);
-router.get('/categories', getAllCategories);
-router.get('/grouped', getMediasGroupedByCategory);
-router.get('/category/:categorySlug', getMediasByCategory);
 router.get('/:id', getMediaById);
 
 // Routes protégées (admin)
