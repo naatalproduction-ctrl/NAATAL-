@@ -1,0 +1,329 @@
+/* ========================================
+   A PROPOS - Section
+   ======================================== */
+
+.apropos {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120px var(--section-padding-x) 80px;
+  position: relative;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+/* Background decorations */
+.apropos-gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+}
+
+.apropos-orb-1 {
+  top: -10%;
+  right: 5%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(201, 168, 76, 0.07) 0%, transparent 70%);
+}
+
+.apropos-orb-2 {
+  bottom: 10%;
+  left: -5%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(201, 168, 76, 0.04) 0%, transparent 70%);
+}
+
+.apropos-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.apropos-line {
+  position: absolute;
+  background: rgba(201, 168, 76, 0.06);
+  pointer-events: none;
+}
+
+.apropos-line-v {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.apropos-line-h {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+/* Inner container */
+.apropos-inner {
+  width: 100%;
+  max-width: var(--container-max);
+  position: relative;
+  z-index: 2;
+}
+
+/* ---- Hero zone ---- */
+.apropos-hero {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto 72px;
+}
+
+.apropos-label {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  padding: 6px 20px;
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: var(--radius-full);
+  background: rgba(201, 168, 76, 0.05);
+}
+
+.apropos-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 5.5vw, 72px);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  letter-spacing: -1.5px;
+  color: var(--color-text);
+}
+
+.apropos-accent {
+  color: #FFD700;
+  font-style: italic;
+}
+
+.apropos-subtitle {
+  font-size: 17px;
+  color: var(--color-text-secondary);
+  line-height: 1.8;
+  max-width: 620px;
+  margin: 0 auto 40px;
+}
+
+.apropos-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ---- Stats bar ---- */
+.apropos-stats {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 100px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+}
+
+.apropos-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 32px 24px;
+  position: relative;
+}
+
+.apropos-stat:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: var(--color-border);
+}
+
+.apropos-stat-value {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--color-accent);
+  letter-spacing: -1px;
+}
+
+.apropos-stat-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ---- Story + Valeurs ---- */
+.apropos-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+}
+
+.apropos-section-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 24px;
+  letter-spacing: -0.5px;
+}
+
+.apropos-section-title::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 2px;
+  background: var(--color-accent);
+  margin-top: 12px;
+  border-radius: 2px;
+}
+
+/* Story */
+.apropos-story p {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.apropos-story strong {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* Valeurs grid */
+.apropos-valeurs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.apropos-valeur-card {
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.apropos-valeur-card:hover {
+  border-color: rgba(201, 168, 76, 0.3);
+  background: rgba(201, 168, 76, 0.03);
+}
+
+.apropos-valeur-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: rgba(201, 168, 76, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  color: var(--color-accent);
+}
+
+.apropos-valeur-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.apropos-valeur-card p {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1024px) {
+  .apropos-content {
+    grid-template-columns: 1fr;
+    gap: 60px;
+  }
+
+  .apropos-stats {
+    margin-bottom: 72px;
+  }
+}
+
+@media (max-width: 768px) {
+  .apropos {
+    padding: 100px 20px 60px;
+  }
+
+  .apropos-hero {
+    margin-bottom: 48px;
+  }
+
+  .apropos-title {
+    font-size: clamp(32px, 8vw, 48px);
+  }
+
+  .apropos-subtitle {
+    font-size: 15px;
+  }
+
+  .apropos-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .apropos-buttons .btn {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+  }
+
+  .apropos-stats {
+    flex-wrap: wrap;
+    margin-bottom: 56px;
+  }
+
+  .apropos-stat {
+    flex: 1 1 45%;
+    padding: 24px 16px;
+  }
+
+  .apropos-stat:not(:last-child)::after {
+    display: none;
+  }
+
+  .apropos-stat-value {
+    font-size: 28px;
+  }
+
+  .apropos-section-title {
+    font-size: 24px;
+  }
+
+  .apropos-line-v,
+  .apropos-line-h {
+    display: none;
+  }
+}

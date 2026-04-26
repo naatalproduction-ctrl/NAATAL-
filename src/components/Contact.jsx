@@ -71,7 +71,7 @@ export default function Contact() {
               </div>
               <div>
                 <h4>Email</h4>
-                <a href="mailto:info.naatalstudio@gmail.com">info.naatalstudio@gmail.com</a>
+                <a href="mailto:hello@naatalstudio.com">hello@naatalstudio.com</a>
               </div>
             </div>
 
@@ -82,7 +82,7 @@ export default function Contact() {
                 </svg>
               </div>
               <div>
-                <h4>Telephone</h4>
+                <h4>Téléphone</h4>
                 <a href="tel:+2250719956586">+225 07 19 95 65 86</a>
               </div>
             </div>
@@ -96,7 +96,7 @@ export default function Contact() {
               </div>
               <div>
                 <h4>Localisation</h4>
-                <span>Abidjan, Cote d'Ivoire</span>
+                <span>Abidjan — Côte d'Ivoire</span>
               </div>
             </div>
 
@@ -112,12 +112,12 @@ export default function Contact() {
             viewport={{ once: true }}
           >
             <div className="form-group">
-              <label htmlFor="name">Nom et Prenom</label>
+              <label htmlFor="name">Nom et Prénom</label>
               <input
                 type="text"
                 id="name"
                 name="name"
-                placeholder="Votre nom et prenom"
+                placeholder="Votre nom et prénom"
                 required
               />
             </div>
@@ -133,7 +133,7 @@ export default function Contact() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="phone">Telephone</label>
+              <label htmlFor="phone">Téléphone</label>
               <input
                 type="tel"
                 id="phone"
@@ -143,22 +143,22 @@ export default function Contact() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="service">Service video <span style={{ opacity: 0.5, fontWeight: 400, fontSize: '12px' }}>(optionnel)</span></label>
+              <label htmlFor="service">Service vidéo <span style={{ opacity: 0.5, fontWeight: 400, fontSize: '12px' }}>(optionnel)</span></label>
               <select
                 id="service"
                 name="service"
                 defaultValue="Projet personnalisé"
               >
-                <option value="Projet personnalisé" className="option-custom">Definir son propre projet</option>
+                <option value="Projet personnalisé" className="option-custom">Définir son propre projet</option>
                 <option value="Film Corporate Institutionnel">Film Corporate Institutionnel</option>
-                <option value="Vidéo de Recrutement & Marque Employeur">Video de Recrutement & Marque Employeur</option>
+                <option value="Vidéo de Recrutement & Marque Employeur">Vidéo de Recrutement & Marque Employeur</option>
                 <option value="Film de Lancement de Produit">Film de Lancement de Produit</option>
-                <option value="Reportage d'Événement Corporate">Reportage d'Evenement Corporate</option>
-                <option value="Interview & Témoignage Client">Interview & Temoignage Client</option>
-                <option value="Vidéo Pédagogique & Formation Interne">Video Pedagogique & Formation Interne</option>
-                <option value="Publicité Digitale Courte">Publicite Digitale Courte</option>
+                <option value="Reportage d'Événement Corporate">Reportage d'Événement Corporate</option>
+                <option value="Interview & Témoignage Client">Interview & Témoignage Client</option>
+                <option value="Vidéo Pédagogique & Formation Interne">Vidéo Pédagogique & Formation Interne</option>
+                <option value="Publicité Digitale Courte">Publicité Digitale Courte</option>
                 <option value="Couverture de Chantier & Immobilier">Couverture de Chantier & Immobilier</option>
-                <option value="Vidéo Publicitaire">Video Publicitaire</option>
+                <option value="Vidéo Publicitaire">Vidéo Publicitaire</option>
               </select>
             </div>
 
@@ -167,7 +167,7 @@ export default function Contact() {
               <textarea
                 id="message"
                 name="message"
-                placeholder="Decrivez votre projet..."
+                placeholder="Décrivez votre projet..."
                 rows="5"
                 required
               ></textarea>
@@ -202,7 +202,7 @@ export default function Contact() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                Message envoye avec succes ! Nous vous repondrons rapidement.
+                Message envoyé avec succès ! Nous vous répondrons rapidement.
               </motion.div>
             )}
             
@@ -212,7 +212,7 @@ export default function Contact() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                Erreur lors de l'envoi. Veuillez reessayer ou nous contacter directement.
+                Erreur lors de l'envoi. Veuillez réessayer ou nous contacter directement.
               </motion.div>
             )}
           </motion.form>

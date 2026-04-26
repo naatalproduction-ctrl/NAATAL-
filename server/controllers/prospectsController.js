@@ -213,7 +213,7 @@ const getAllProspects = async (req, res) => {
 const updateProspect = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, website, email, status, notes } = req.body;
+    const { name, phone, website, email, status, notes, channel, address } = req.body;
 
     const result = await query(`
       UPDATE prospects
@@ -222,10 +222,12 @@ const updateProspect = async (req, res) => {
           website = COALESCE($3, website),
           email = COALESCE($4, email),
           status = COALESCE($5, status),
-          notes = COALESCE($6, notes)
-      WHERE id = $7
+          notes = COALESCE($6, notes),
+          channel = COALESCE($7, channel),
+          address = COALESCE($8, address)
+      WHERE id = $9
       RETURNING *
-    `, [name, phone, website, email, status, notes, id]);
+    `, [name, phone, website, email, status, notes, channel, address, id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Prospect non trouvé' });

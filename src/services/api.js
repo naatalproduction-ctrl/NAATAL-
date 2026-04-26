@@ -548,6 +548,86 @@ export const tasksAPI = {
 };
 
 // ============================================
+// PORTFOLIO API (Soukavisuals)
+// ============================================
+export const portfolioAPI = {
+  // Public
+  getPublic: () => request('/portfolio/public'),
+
+  // Profile
+  getProfile: () => request('/portfolio/profile'),
+  updateProfile: (data) => request('/portfolio/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+
+  // Stats
+  getStats: () => request('/portfolio/stats'),
+  createStat: (data) => request('/portfolio/stats', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  updateStat: (id, data) => request(`/portfolio/stats/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  deleteStat: (id) => request(`/portfolio/stats/${id}`, {
+    method: 'DELETE',
+  }),
+
+  // Projects
+  getProjects: () => request('/portfolio/projects'),
+  createProject: (data) => request('/portfolio/projects', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  updateProject: (id, data) => request(`/portfolio/projects/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  deleteProject: (id) => request(`/portfolio/projects/${id}`, {
+    method: 'DELETE',
+  }),
+
+  // Skills
+  getSkills: () => request('/portfolio/skills'),
+  createSkill: (data) => request('/portfolio/skills', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  updateSkill: (id, data) => request(`/portfolio/skills/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  deleteSkill: (id) => request(`/portfolio/skills/${id}`, {
+    method: 'DELETE',
+  }),
+
+  // Marquee
+  getMarquee: () => request('/portfolio/marquee'),
+  createMarquee: (data) => request('/portfolio/marquee', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  updateMarquee: (id, data) => request(`/portfolio/marquee/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  deleteMarquee: (id) => request(`/portfolio/marquee/${id}`, {
+    method: 'DELETE',
+  }),
+
+  // Messages
+  getMessages: () => request('/portfolio/messages'),
+  markMessageRead: (id) => request(`/portfolio/messages/${id}/read`, {
+    method: 'PUT',
+  }),
+  deleteMessage: (id) => request(`/portfolio/messages/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// ============================================
 // HEALTH CHECK
 // ============================================
 export const checkAPIHealth = () => request('/health');
@@ -568,5 +648,6 @@ export default {
   prestations: prestationsAPI,
   offres: offresAPI,
   tasks: tasksAPI,
+  portfolio: portfolioAPI,
   health: checkAPIHealth,
 };

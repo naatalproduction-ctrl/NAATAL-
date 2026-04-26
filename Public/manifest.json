@@ -1,8 +1,8 @@
 {
   "name": "NAATAL Studio - Production Audiovisuelle et Cinema",
   "short_name": "NAATAL",
-  "description": "Nous donnons une image de Marque a vos ambitions. Base a Abidjan, Cote d'Ivoire.",
-  "start_url": "/admin",
+  "description": "Studio de cinéma et production audiovisuelle basé à Abidjan, Côte d'Ivoire.",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#000000",

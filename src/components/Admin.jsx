@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { useSite } from '../context/SiteContext'
 import { usersAPI, comptabiliteAPI, projetsAPI, attachmentsAPI, cinemaAPI, boutiqueAPI, uploadsAPI, storyboardAPI, partnersAPI, prestationsAPI, offresAPI, tasksAPI, leadsAPI, prospectsAPI } from '../services/api'
 import Storyboard from './Storyboard'
+import PortfolioAdmin from './PortfolioAdmin'
 import './Admin.css'
 
 // Composant AnimatedCounter - Animation style chrono
@@ -279,7 +280,9 @@ export default function Admin() {
   const [showAddLead, setShowAddLead] = useState(false)
   const [editingLead, setEditingLead] = useState(null)
   const [leadFilter, setLeadFilter] = useState('all')
-  const [newLead, setNewLead] = useState({ name: '', email: '', phone: '', company: '', service: '', budget: '', message: '' })
+  const [newLead, setNewLead] = useState({ name: '', email: '', phone: '', phone2: '', phone3: '', company: '', service: '', budget: '', message: '', channel: 'whatsapp' })
+  const [showAddProspect, setShowAddProspect] = useState(false)
+  const [newProspect, setNewProspect] = useState({ name: '', phone: '', email: '', company: '', address: '', category: '', channel: 'whatsapp', notes: '' })
 
   // État pour Prospection
   const [leadsSubTab, setLeadsSubTab] = useState('search')
@@ -499,11 +502,33 @@ export default function Admin() {
 
   const handleCreateLead = async () => {
     if (!newLead.name) return
-    const result = await leadsAPI.create(newLead)
+    const result = await leadsAPI.create({ ...newLead, source: 'admin' })
     if (result.success) {
       setShowAddLead(false)
-      setNewLead({ name: '', email: '', phone: '', company: '', service: '', budget: '', message: '' })
+      setNewLead({ name: '', email: '', phone: '', phone2: '', phone3: '', company: '', service: '', budget: '', message: '', channel: 'whatsapp' })
       fetchLeadsData()
+    }
+  }
+
+  const handleCreateProspect = async () => {
+    if (!newProspect.name) return
+    const result = await prospectsAPI.save({
+      name: newProspect.name,
+      phone: newProspect.phone,
+      email: newProspect.email,
+      address: newProspect.address || newProspect.company,
+      category: newProspect.category,
+      channel: newProspect.channel,
+      notes: newProspect.notes,
+      website: '',
+      place_id: `manual_${Date.now()}`,
+      search_query: 'manual',
+      location: 'Abidjan',
+    })
+    if (result.success) {
+      setShowAddProspect(false)
+      setNewProspect({ name: '', phone: '', email: '', company: '', address: '', category: '', channel: 'whatsapp', notes: '' })
+      fetchProspects()
     }
   }
 
@@ -525,9 +550,15 @@ export default function Admin() {
   const getLeadStatusColor = (status) => {
     switch (status) {
       case 'nouveau': return '#3b82f6'
+      case 'envoye': return '#6366f1'
       case 'contacte': return '#f59e0b'
+      case 'a_relancer': return '#f97316'
+      case 'en_discussion': return '#06b6d4'
       case 'devis': return '#8b5cf6'
+      case 'rdv_fixe': return '#a855f7'
+      case 'signe': return '#22c55e'
       case 'converti': return '#22c55e'
+      case 'pas_interesse': return '#ef4444'
       case 'perdu': return '#ef4444'
       default: return '#6b7280'
     }
@@ -536,12 +567,33 @@ export default function Admin() {
   const getLeadStatusLabel = (status) => {
     switch (status) {
       case 'nouveau': return 'Nouveau'
+      case 'envoye': return 'Envoyé'
       case 'contacte': return 'Contacté'
+      case 'a_relancer': return 'À relancer'
+      case 'en_discussion': return 'En discussion'
       case 'devis': return 'Devis envoyé'
+      case 'rdv_fixe': return 'RDV fixé'
+      case 'signe': return 'Signé'
       case 'converti': return 'Converti'
+      case 'pas_interesse': return 'Pas intéressé'
       case 'perdu': return 'Perdu'
       default: return status
     }
+  }
+
+  const channelIcons = {
+    whatsapp: '💬',
+    instagram: '📸',
+    linkedin: '💼',
+    email: '📧',
+    telephone: '📞',
+    facebook: '👥',
+    site: '🌐',
+  }
+
+  const getChannelLabel = (ch) => {
+    const labels = { whatsapp: 'WhatsApp', instagram: 'Instagram', linkedin: 'LinkedIn', email: 'Email', telephone: 'Téléphone', facebook: 'Facebook', site: 'Site web' }
+    return labels[ch] || ch
   }
 
   // Prospection
@@ -2019,6 +2071,7 @@ export default function Admin() {
     { id: 'storyboard', label: 'Storyboard', icon: icons.storyboard },
     { id: 'leads', label: 'Leads Power', icon: icons.leads },
     { id: 'partners', label: 'Partenaires', icon: icons.partners },
+    { id: 'portfolio', label: 'Portfolio', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> },
     { id: 'settings', label: 'Paramètres', icon: icons.settings }
   ]
 
@@ -5824,6 +5877,10 @@ export default function Admin() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                     Prospects ({prospects.length})
                   </button>
+                  <button className={`leads-subtab ${leadsSubTab === 'messages' ? 'active' : ''}`} onClick={() => setLeadsSubTab('messages')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Messages
+                  </button>
                   <button className={`leads-subtab ${leadsSubTab === 'emailing' ? 'active' : ''}`} onClick={() => setLeadsSubTab('emailing')}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4z"/></svg>
                     Emailing
@@ -5940,13 +5997,51 @@ export default function Admin() {
                 {/* ---- TAB: PROSPECTS ---- */}
                 {leadsSubTab === 'prospects' && (
                   <div className="prospects-list-section">
-                    <div className="leads-filters">
-                      {['all', 'nouveau', 'contacte', 'interesse', 'converti', 'ignore'].map(f => (
-                        <button key={f} className={`leads-filter-btn ${prospectFilter === f ? 'active' : ''}`} onClick={() => setProspectFilter(f)}>
-                          {f === 'all' ? 'Tous' : f.charAt(0).toUpperCase() + f.slice(1)}
-                        </button>
-                      ))}
+                    <div className="leads-filters" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {['all', 'nouveau', 'contacte', 'interesse', 'converti', 'ignore'].map(f => (
+                          <button key={f} className={`leads-filter-btn ${prospectFilter === f ? 'active' : ''}`} onClick={() => setProspectFilter(f)}>
+                            {f === 'all' ? 'Tous' : f.charAt(0).toUpperCase() + f.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                      <motion.button className="btn-primary" onClick={() => setShowAddProspect(true)} whileHover={{ scale: 1.02 }} style={{ padding: '8px 16px', fontSize: 13 }}>
+                        + Ajouter un prospect
+                      </motion.button>
                     </div>
+
+                    {/* Modal Ajouter Prospect */}
+                    {showAddProspect && (
+                      <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setShowAddProspect(false)}>
+                        <motion.div className="modal-content" initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
+                          <h3>Ajouter un prospect</h3>
+                          <div className="form-grid">
+                            <div className="form-group"><label>Nom *</label><input value={newProspect.name} onChange={e => setNewProspect({...newProspect, name: e.target.value})} placeholder="Nom du prospect" /></div>
+                            <div className="form-group"><label>Entreprise</label><input value={newProspect.company} onChange={e => setNewProspect({...newProspect, company: e.target.value})} placeholder="Nom de l'entreprise" /></div>
+                            <div className="form-group"><label>Téléphone</label><input value={newProspect.phone} onChange={e => setNewProspect({...newProspect, phone: e.target.value})} placeholder="+225 XX XX XX XX" /></div>
+                            <div className="form-group"><label>Email</label><input value={newProspect.email} onChange={e => setNewProspect({...newProspect, email: e.target.value})} placeholder="email@example.com" /></div>
+                            <div className="form-group"><label>Adresse</label><input value={newProspect.address} onChange={e => setNewProspect({...newProspect, address: e.target.value})} placeholder="Cocody, Abidjan" /></div>
+                            <div className="form-group"><label>Catégorie</label><input value={newProspect.category} onChange={e => setNewProspect({...newProspect, category: e.target.value})} placeholder="Restaurant, Immobilier..." /></div>
+                            <div className="form-group">
+                              <label>Canal</label>
+                              <select value={newProspect.channel} onChange={e => setNewProspect({...newProspect, channel: e.target.value})}>
+                                <option value="whatsapp">💬 WhatsApp</option>
+                                <option value="instagram">📸 Instagram</option>
+                                <option value="linkedin">💼 LinkedIn</option>
+                                <option value="email">📧 Email</option>
+                                <option value="telephone">📞 Téléphone</option>
+                                <option value="facebook">👥 Facebook</option>
+                              </select>
+                            </div>
+                            <div className="form-group" style={{ gridColumn: '1 / -1' }}><label>Notes</label><textarea value={newProspect.notes} onChange={e => setNewProspect({...newProspect, notes: e.target.value})} placeholder="Notes sur le prospect..." rows={3} /></div>
+                          </div>
+                          <div className="modal-actions">
+                            <button className="btn-secondary" onClick={() => setShowAddProspect(false)}>Annuler</button>
+                            <motion.button className="btn-primary" onClick={handleCreateProspect} whileHover={{ scale: 1.02 }}>Ajouter</motion.button>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    )}
                     <div className="prospects-table">
                       <div className="prospects-table-header">
                         <span>Entreprise</span>
@@ -6006,12 +6101,23 @@ export default function Admin() {
                       </motion.button>
                     </div>
 
-                    {/* Kanban Board */}
+                    {/* Kanban Board - Drag & Drop */}
                     <div className="leads-kanban">
-                      {['nouveau', 'contacte', 'devis', 'converti', 'perdu'].map(status => {
+                      {['nouveau', 'envoye', 'a_relancer', 'en_discussion', 'rdv_fixe', 'signe', 'pas_interesse'].map(status => {
                         const statusLeads = leads.filter(l => l.status === status)
                         return (
-                          <div key={status} className="kanban-column">
+                          <div
+                            key={status}
+                            className={`kanban-column ${dragOverCol === status ? 'kanban-column--dragover' : ''}`}
+                            onDragOver={e => { e.preventDefault(); setDragOverCol(status); }}
+                            onDragLeave={() => setDragOverCol(null)}
+                            onDrop={e => {
+                              e.preventDefault();
+                              setDragOverCol(null);
+                              const leadId = parseInt(e.dataTransfer.getData('leadId'));
+                              if (leadId) handleUpdateLead(leadId, { status });
+                            }}
+                          >
                             <div className="kanban-column-header" style={{ borderTopColor: getLeadStatusColor(status) }}>
                               <span className="kanban-column-dot" style={{ background: getLeadStatusColor(status) }} />
                               <span className="kanban-column-title">{getLeadStatusLabel(status)}</span>
@@ -6023,16 +6129,25 @@ export default function Admin() {
                                   <motion.div
                                     key={lead.id}
                                     className="kanban-card"
+                                    draggable={editingLead?.id !== lead.id}
+                                    onDragStart={e => {
+                                      e.dataTransfer.setData('leadId', lead.id.toString());
+                                      e.currentTarget.style.opacity = '0.4';
+                                    }}
+                                    onDragEnd={e => { e.currentTarget.style.opacity = '1'; }}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     layout
+                                    style={{ cursor: editingLead?.id === lead.id ? 'default' : 'grab' }}
                                   >
                                     {editingLead?.id === lead.id ? (
                                       <div className="kanban-card-edit">
                                         <input value={editingLead.name} onChange={e => setEditingLead({...editingLead, name: e.target.value})} placeholder="Nom" />
                                         <input value={editingLead.email || ''} onChange={e => setEditingLead({...editingLead, email: e.target.value})} placeholder="Email" />
-                                        <input value={editingLead.phone || ''} onChange={e => setEditingLead({...editingLead, phone: e.target.value})} placeholder="Telephone" />
+                                        <input value={editingLead.phone || ''} onChange={e => setEditingLead({...editingLead, phone: e.target.value})} placeholder="Téléphone" />
+                                        <input value={editingLead.phone2 || ''} onChange={e => setEditingLead({...editingLead, phone2: e.target.value})} placeholder="Téléphone 2" />
+                                        <input value={editingLead.phone3 || ''} onChange={e => setEditingLead({...editingLead, phone3: e.target.value})} placeholder="Téléphone 3" />
                                         <input value={editingLead.company || ''} onChange={e => setEditingLead({...editingLead, company: e.target.value})} placeholder="Entreprise" />
                                         <input value={editingLead.service || ''} onChange={e => setEditingLead({...editingLead, service: e.target.value})} placeholder="Service" />
                                         <textarea value={editingLead.notes || ''} onChange={e => setEditingLead({...editingLead, notes: e.target.value})} placeholder="Notes" rows={2} />
@@ -6048,22 +6163,14 @@ export default function Admin() {
                                           {lead.company && <small>{lead.company}</small>}
                                         </div>
                                         <div className="kanban-card-info">
+                                          {lead.channel && <span style={{ fontSize: 11, opacity: 0.7 }}>{channelIcons[lead.channel] || '📨'} {getChannelLabel(lead.channel)}</span>}
                                           {lead.phone && <span>{lead.phone}</span>}
+                                          {lead.phone2 && <span>{lead.phone2}</span>}
+                                          {lead.phone3 && <span>{lead.phone3}</span>}
                                           {lead.email && <span>{lead.email}</span>}
                                           {lead.service && <span className="kanban-card-service">{lead.service}</span>}
                                         </div>
                                         <div className="kanban-card-footer">
-                                          <select
-                                            value={lead.status}
-                                            onChange={e => handleUpdateLead(lead.id, { status: e.target.value })}
-                                            className="kanban-move-select"
-                                          >
-                                            <option value="nouveau">→ Nouveau</option>
-                                            <option value="contacte">→ Contacte</option>
-                                            <option value="devis">→ Devis</option>
-                                            <option value="converti">→ Converti</option>
-                                            <option value="perdu">→ Perdu</option>
-                                          </select>
                                           <div className="kanban-card-actions">
                                             <motion.button className="action-btn edit" onClick={() => setEditingLead({...lead})} whileHover={{ scale: 1.1 }} title="Modifier">
                                               {icons.edit}
@@ -6080,7 +6187,7 @@ export default function Admin() {
                                 ))}
                               </AnimatePresence>
                               {statusLeads.length === 0 && (
-                                <div className="kanban-empty">Aucun lead</div>
+                                <div className="kanban-empty">Glissez un lead ici</div>
                               )}
                             </div>
                           </div>
@@ -6091,6 +6198,149 @@ export default function Admin() {
                 )}
 
                 {/* ---- TAB: EMAILING ---- */}
+                {/* ---- TAB: MESSAGES ---- */}
+                {leadsSubTab === 'messages' && (
+                  <div className="messages-templates-section">
+                    {[
+                      {
+                        sector: 'Immobilier & Promotion',
+                        icon: '🏗️',
+                        templates: [
+                          { label: 'Premier contact froid (inconnu)', channel: 'whatsapp', text: `Bonjour [Prénom] 👋\n\nJe suis [Votre prénom], fondateur de Naatal Studio — studio de production vidéo corporate basé à Abidjan.\n\nJe travaille avec des promoteurs immobiliers pour valoriser leurs programmes en vidéo avant et pendant la commercialisation.\n\nUne vidéo bien réalisée d'une résidence peut multiplier les demandes qualifiées dès la première semaine de mise en ligne.\n\nEst-ce que vous avez des programmes en cours de commercialisation en ce moment ?\n\nNaatal Studio · naatalstudio.com` },
+                          { label: 'Contact via Instagram', channel: 'instagram', text: `Bonjour [Prénom] 👋\n\nJ'ai vu votre programme [nom du programme] — l'architecture est vraiment bien pensée.\n\nJe suis vidéaste corporate à Abidjan, spécialisé en films de promotion immobilière. Je réalise des vidéos qui donnent envie d'acheter avant même la visite.\n\nEst-ce que vous avez déjà une vidéo de présentation pour ce programme ? Si pas encore, je serais ravi de vous proposer quelque chose.\n\nNaatal Studio · naatalstudio.com 🎬` },
+                          { label: 'Relance après 48h', channel: 'whatsapp', text: `Bonjour [Prénom],\n\nJe voulais juste m'assurer que mon message vous était bien parvenu 🙏\n\nSi ce n'est pas le bon moment, pas de souci — je reste disponible pour échanger quand vous le souhaitez.\n\nNaatal Studio · +225 07 19 95 65 86` },
+                          { label: 'Réponse quand ils demandent le prix', channel: 'whatsapp', text: `Bien sûr 😊\n\nPour un film de promotion immobilière, nos tarifs démarrent à *400 000 FCFA* selon la durée et le nombre de plans.\n\nLe film inclut :\n🎬 Tournage terrain (extérieur + intérieur)\n🎨 Montage cinématique avec musique\n📱 2 formats livrés (horizontal + vertical réseaux)\n⚡ Livraison sous 4 jours\n\nEst-ce que je peux vous appeler 10 minutes pour mieux comprendre votre programme ?` },
+                        ]
+                      },
+                      {
+                        sector: 'Restaurants & Hôtellerie',
+                        icon: '🍽️',
+                        templates: [
+                          { label: 'Premier contact', channel: 'whatsapp', text: `Bonjour [Nom],\n\nJe suis Souka de Naatal Studio à Abidjan. Je viens de découvrir [Nom du restaurant] et votre univers culinaire est vraiment unique.\n\nSaviez-vous qu'une vidéo de 60 secondes bien réalisée peut doubler votre visibilité sur Instagram et attirer de nouveaux clients ?\n\nNous réalisons des vidéos food & lifestyle qui subliment l'ambiance et les plats.\n\nOn peut en discuter rapidement ?\n\nCordialement` },
+                          { label: 'Relance', channel: 'whatsapp', text: `Bonjour [Nom],\n\nJe reviens vers vous — nous avons récemment livré du contenu vidéo pour des restaurants à Abidjan avec des résultats concrets sur les réservations.\n\nUn petit tournage d'une demi-journée suffit pour créer 3-4 vidéos percutantes pour vos réseaux.\n\nIntéressé(e) pour un échange ?\n\nCordialement` },
+                        ]
+                      },
+                      {
+                        sector: 'Entreprises & Corporate',
+                        icon: '🏢',
+                        templates: [
+                          { label: 'Premier contact', channel: 'whatsapp', text: `Bonjour [Nom],\n\nJe suis Souka, fondateur de Naatal Studio, société de production audiovisuelle à Abidjan.\n\nJe contacte [Entreprise] car nous accompagnons les entreprises qui souhaitent renforcer leur image de marque par la vidéo.\n\nFilm institutionnel, vidéo de présentation, contenu pour les réseaux — nous maîtrisons toute la chaîne de production.\n\nSeriez-vous ouvert à un échange pour explorer comment la vidéo pourrait servir votre communication ?\n\nCordialement` },
+                          { label: 'Relance', channel: 'whatsapp', text: `Bonjour [Nom],\n\nJe me permets de vous relancer suite à mon message précédent.\n\nNous travaillons actuellement avec plusieurs entreprises à Abidjan sur leur stratégie vidéo et les retours sont excellents.\n\nJe serais ravi de vous présenter nos réalisations et discuter de vos besoins.\n\nQuand seriez-vous disponible pour un court appel ?\n\nBien à vous` },
+                          { label: 'Proposition de valeur', channel: 'email', text: `Objet : Donnez une image de marque à [Entreprise]\n\nBonjour [Nom],\n\nL'image que vous donnez commence avant que vous parliez. Votre site, vos réseaux, vos présentations — tout parle avant vous.\n\nChez Naatal Studio, nous construisons des récits visuels qui ancrent votre marque dans l'esprit de vos clients.\n\nCe que nous proposons :\n✓ Films institutionnels\n✓ Vidéos corporate mensuelles\n✓ Couverture d'événements\n✓ Contenu réseaux sociaux\n\nNos packages démarrent à 200 000 FCFA/mois.\n\n→ naatalstudio.com\n\nCordialement,\nSouka — Naatal Studio\n+225 07 19 95 65 86` },
+                        ]
+                      },
+                      {
+                        sector: 'E-commerce & Boutiques',
+                        icon: '🛍️',
+                        templates: [
+                          { label: 'Premier contact', channel: 'whatsapp', text: `Bonjour [Nom],\n\nJe suis Souka de Naatal Studio. J'ai vu votre boutique [Nom boutique] et vos produits sont vraiment beaux !\n\nUne vidéo produit bien réalisée peut transformer vos ventes en ligne. Nous faisons des vidéos courtes, dynamiques, prêtes pour Instagram et TikTok.\n\nOn en discute ?\n\nCordialement` },
+                          { label: 'Relance', channel: 'whatsapp', text: `Re bonjour [Nom] 👋\n\nJe voulais juste vous montrer ce type de rendu qu'on fait pour les boutiques :\n→ Vidéo produit en 30-60s\n→ Format vertical pour les réseaux\n→ Livraison en 5 jours\n\nSi ça vous intéresse, on peut organiser un tournage rapide d'une demi-journée.\n\nBonne journée !` },
+                        ]
+                      },
+                      {
+                        sector: 'Événementiel',
+                        icon: '🎪',
+                        templates: [
+                          { label: 'Premier contact', channel: 'whatsapp', text: `Bonjour [Nom],\n\nJe suis Souka de Naatal Studio, production audiovisuelle à Abidjan.\n\nNous couvrons des événements corporate et privés avec une approche cinématique : multi-caméra, montage rapide J+2, version courte pour les réseaux.\n\nSi vous organisez des événements et souhaitez en garder une trace professionnelle, je serais ravi d'échanger.\n\nCordialement` },
+                          { label: 'Après événement', channel: 'whatsapp', text: `Bonjour [Nom],\n\nJ'ai vu que [Événement] s'est bien passé, félicitations !\n\nPour vos prochains événements, sachez que nous livrons un aftermovie de qualité en 48h, avec des formats courts pour vos réseaux inclus.\n\nOn en discute pour le prochain ?\n\nCordialement` },
+                        ]
+                      },
+                      {
+                        sector: 'Politique & Institutions',
+                        icon: '🏛️',
+                        templates: [
+                          { label: 'Premier contact', channel: 'whatsapp', text: `Bonjour [Nom],\n\nJe suis Souka, directeur de Naatal Studio, société de production audiovisuelle basée à Abidjan.\n\nNous accompagnons des personnalités et institutions dans leur communication visuelle : vidéos de campagne, documentaires, couverture d'activités sur le terrain.\n\nNous avons récemment produit une vidéo de campagne législative à Gohitafla qui a eu un fort impact local.\n\nSeriez-vous intéressé par une discussion sur votre stratégie de communication vidéo ?\n\nCordialement` },
+                          { label: 'Relance', channel: 'whatsapp', text: `Bonjour [Nom],\n\nJe reviens vers vous concernant la production vidéo.\n\nDans le contexte actuel, la vidéo est devenue l'outil numéro 1 de communication pour les institutions et personnalités publiques.\n\nNous proposons des packages adaptés : captation terrain, interviews, montage rapide.\n\nJe reste disponible pour en discuter.\n\nCordialement` },
+                        ]
+                      },
+                    ].map((sector, si) => (
+                      <div key={si} className="messages-sector" style={{ marginBottom: 24 }}>
+                        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 20 }}>{sector.icon}</span> {sector.sector}
+                        </h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+                          {sector.templates.map((tpl, ti) => (
+                            <div key={ti} style={{
+                              background: 'rgba(255,255,255,0.04)',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: 12,
+                              padding: 16,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 10,
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>{tpl.label}</span>
+                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: tpl.channel === 'whatsapp' ? 'rgba(37,211,102,0.15)' : tpl.channel === 'email' ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.08)', color: tpl.channel === 'whatsapp' ? '#25d366' : tpl.channel === 'email' ? '#818cf8' : '#888' }}>
+                                  {tpl.channel === 'whatsapp' ? '💬 WhatsApp' : tpl.channel === 'email' ? '📧 Email' : tpl.channel}
+                                </span>
+                              </div>
+                              <textarea
+                                defaultValue={tpl.text}
+                                id={`msg-${si}-${ti}`}
+                                style={{
+                                  fontSize: 12,
+                                  color: 'rgba(255,255,255,0.6)',
+                                  lineHeight: 1.6,
+                                  margin: 0,
+                                  minHeight: 140,
+                                  resize: 'vertical',
+                                  fontFamily: 'inherit',
+                                  background: 'rgba(0,0,0,0.3)',
+                                  border: '1px solid rgba(255,255,255,0.06)',
+                                  borderRadius: 8,
+                                  padding: 10,
+                                  width: '100%',
+                                  boxSizing: 'border-box',
+                                }}
+                              />
+                              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                <motion.button
+                                  onClick={() => { document.getElementById(`msg-${si}-${ti}`).value = tpl.text; }}
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  style={{
+                                    padding: '6px 14px',
+                                    fontSize: 12,
+                                    background: 'rgba(255,255,255,0.05)',
+                                    color: 'rgba(255,255,255,0.4)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: 8,
+                                    cursor: 'pointer',
+                                    fontFamily: 'inherit',
+                                  }}
+                                >
+                                  ↺ Réinitialiser
+                                </motion.button>
+                                <motion.button
+                                  onClick={() => {
+                                    const txt = document.getElementById(`msg-${si}-${ti}`).value;
+                                    navigator.clipboard.writeText(txt);
+                                  }}
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  style={{
+                                    padding: '6px 14px',
+                                    fontSize: 12,
+                                    background: 'rgba(201,168,76,0.15)',
+                                    color: '#c9a84c',
+                                    border: '1px solid rgba(201,168,76,0.2)',
+                                    borderRadius: 8,
+                                    cursor: 'pointer',
+                                    fontFamily: 'inherit',
+                                  }}
+                                >
+                                  📋 Copier le message
+                                </motion.button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {leadsSubTab === 'emailing' && (
                   <div className="emailing-section">
                     <div className="leads-empty" style={{ padding: '60px 20px' }}>
@@ -6128,6 +6378,16 @@ export default function Admin() {
                           </div>
                           <div className="form-row">
                             <div className="form-group">
+                              <label>Téléphone 2</label>
+                              <input type="text" value={newLead.phone2} onChange={e => setNewLead({...newLead, phone2: e.target.value})} placeholder="Numéro secondaire" />
+                            </div>
+                            <div className="form-group">
+                              <label>Téléphone 3</label>
+                              <input type="text" value={newLead.phone3} onChange={e => setNewLead({...newLead, phone3: e.target.value})} placeholder="Numéro tertiaire" />
+                            </div>
+                          </div>
+                          <div className="form-row">
+                            <div className="form-group">
                               <label>Entreprise</label>
                               <input type="text" value={newLead.company} onChange={e => setNewLead({...newLead, company: e.target.value})} placeholder="Nom entreprise" />
                             </div>
@@ -6153,6 +6413,17 @@ export default function Admin() {
                               <option value="1M - 3M FCFA">1 000 000 - 3 000 000 FCFA</option>
                               <option value="3M - 5M FCFA">3 000 000 - 5 000 000 FCFA</option>
                               <option value="> 5M FCFA">Plus de 5 000 000 FCFA</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Canal de contact</label>
+                            <select value={newLead.channel} onChange={e => setNewLead({...newLead, channel: e.target.value})}>
+                              <option value="whatsapp">💬 WhatsApp</option>
+                              <option value="instagram">📸 Instagram</option>
+                              <option value="linkedin">💼 LinkedIn</option>
+                              <option value="email">📧 Email</option>
+                              <option value="telephone">📞 Téléphone</option>
+                              <option value="facebook">👥 Facebook</option>
                             </select>
                           </div>
                           <div className="form-group">
@@ -6435,6 +6706,20 @@ export default function Admin() {
             )}
 
             {/* ============================================ */}
+            {/* PORTFOLIO SOUKAVISUALS */}
+            {/* ============================================ */}
+            {activeTab === 'portfolio' && (
+              <motion.div key="portfolio" {...pageTransition} className="dash-section">
+                <div className="dash-section-header">
+                  <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    Portfolio Soukavisuals
+                  </h3>
+                </div>
+                <PortfolioAdmin />
+              </motion.div>
+            )}
+
             {/* PARAMÈTRES */}
             {/* ============================================ */}
             {activeTab === 'settings' && (

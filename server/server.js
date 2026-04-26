@@ -28,6 +28,7 @@ const tasksRoutes = require('./routes/tasks');
 const leadsRoutes = require('./routes/leads');
 const prospectsRoutes = require('./routes/prospects');
 const offresRoutes = require('./routes/offres');
+const portfolioRoutes = require('./routes/portfolio');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -115,6 +116,7 @@ app.use('/api/tasks', tasksRoutes);
 app.use('/api/leads', leadsRoutes);
 app.use('/api/prospects', prospectsRoutes);
 app.use('/api/offres', offresRoutes);
+app.use('/api/portfolio', portfolioRoutes);
 
 // Route de test
 app.get('/api', (req, res) => {

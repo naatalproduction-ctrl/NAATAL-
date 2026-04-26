@@ -11,6 +11,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // Never intercept API requests — let them go directly to the network
+  if (url.pathname.startsWith('/api')) {
+    return;
+  }
+
   // For navigation requests (HTML pages), always go to network first
   // This ensures the SPA router handles all routes including /admin
   if (event.request.mode === 'navigate') {
@@ -29,6 +34,10 @@ self.addEventListener('fetch', (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
       }
       return response;
-    }).catch(() => caches.match(event.request))
+    }).catch(() =>
+      caches.match(event.request).then((cached) =>
+        cached || new Response('Offline', { status: 503, statusText: 'Service Unavailable' })
+      )
+    )
   );
 });

@@ -156,7 +156,7 @@ export default function Prestations() {
                         <p>{prestation.description}</p>
                         <div className="prestation-card-line" />
                         <span className="prestation-cta">
-                          Voir les details
+                          Voir les détails
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
@@ -193,7 +193,7 @@ export default function Prestations() {
               transition={{ duration: 0.8, delay: 0.4 }}
               viewport={{ once: true }}
             >
-              <p>Un projet en tete ? Parlons-en.</p>
+              <p>Un projet en tête ? Parlons-en.</p>
               <a href="#contact" className="prestations-cta-btn">
                 Demander un devis
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

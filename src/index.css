@@ -124,6 +124,34 @@ img {
   color: var(--color-white);
 }
 
+/* Back to site button */
+.back-to-site {
+  position: fixed;
+  top: 84px;
+  left: 20px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.back-to-site:hover {
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-color: rgba(201, 168, 76, 0.3);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   :root {

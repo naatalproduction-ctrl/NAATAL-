@@ -38,20 +38,20 @@ const getLeadById = async (req, res) => {
   }
 };
 
-// Créer un lead (public - depuis le site)
+// Créer un lead (public - depuis le site ou admin)
 const createLead = async (req, res) => {
   try {
-    const { name, email, phone, company, service, budget, message, source } = req.body;
+    const { name, email, phone, phone2, phone3, company, service, budget, message, source, channel, status, notes } = req.body;
 
     if (!name) {
       return res.status(400).json({ success: false, error: 'Le nom est requis' });
     }
 
     const result = await query(`
-      INSERT INTO leads (name, email, phone, company, service, budget, message, source)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO leads (name, email, phone, phone2, phone3, company, service, budget, message, source, channel, status, notes, sent_date)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, COALESCE($12, 'nouveau'), $13, $14)
       RETURNING *
-    `, [name, email, phone, company, service, budget, message, source || 'site']);
+    `, [name, email, phone, phone2, phone3, company, service, budget, message, source || 'site', channel || 'whatsapp', status, notes, channel ? new Date() : null]);
 
     res.status(201).json({ success: true, data: result.rows[0], message: 'Lead créé avec succès' });
   } catch (error) {
@@ -63,23 +63,28 @@ const createLead = async (req, res) => {
 const updateLead = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, company, service, budget, message, source, status, notes } = req.body;
+    const { name, email, phone, phone2, phone3, company, service, budget, message, source, status, notes, channel, rdv_date, relance_count } = req.body;
 
     const result = await query(`
       UPDATE leads
       SET name = COALESCE($1, name),
           email = COALESCE($2, email),
           phone = COALESCE($3, phone),
-          company = COALESCE($4, company),
-          service = COALESCE($5, service),
-          budget = COALESCE($6, budget),
-          message = COALESCE($7, message),
-          source = COALESCE($8, source),
-          status = COALESCE($9, status),
-          notes = COALESCE($10, notes)
-      WHERE id = $11
+          phone2 = COALESCE($4, phone2),
+          phone3 = COALESCE($5, phone3),
+          company = COALESCE($6, company),
+          service = COALESCE($7, service),
+          budget = COALESCE($8, budget),
+          message = COALESCE($9, message),
+          source = COALESCE($10, source),
+          status = COALESCE($11, status),
+          notes = COALESCE($12, notes),
+          channel = COALESCE($13, channel),
+          rdv_date = COALESCE($14, rdv_date),
+          relance_count = COALESCE($15, relance_count)
+      WHERE id = $16
       RETURNING *
-    `, [name, email, phone, company, service, budget, message, source, status, notes, id]);
+    `, [name, email, phone, phone2, phone3, company, service, budget, message, source, status, notes, channel, rdv_date, relance_count, id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Lead non trouvé' });
@@ -115,13 +120,29 @@ const getLeadsStats = async (req, res) => {
     const recent = await query(`
       SELECT COUNT(*) as count FROM leads WHERE created_at > NOW() - INTERVAL '30 days'
     `);
+    const byChannel = await query(`
+      SELECT channel, COUNT(*) as count FROM leads WHERE channel IS NOT NULL GROUP BY channel ORDER BY count DESC
+    `);
+    const thisWeek = await query(`
+      SELECT COUNT(*) as count FROM leads WHERE created_at > date_trunc('week', CURRENT_DATE)
+    `);
+    const weeklyByDay = await query(`
+      SELECT EXTRACT(DOW FROM created_at) as day, COUNT(*) as count
+      FROM leads
+      WHERE created_at > date_trunc('week', CURRENT_DATE)
+      GROUP BY EXTRACT(DOW FROM created_at)
+      ORDER BY day
+    `);
 
     res.json({
       success: true,
       data: {
         total: parseInt(total.rows[0].count),
         recent: parseInt(recent.rows[0].count),
-        byStatus: byStatus.rows
+        thisWeek: parseInt(thisWeek.rows[0].count),
+        byStatus: byStatus.rows,
+        byChannel: byChannel.rows,
+        weeklyByDay: weeklyByDay.rows
       }
     });
   } catch (error) {

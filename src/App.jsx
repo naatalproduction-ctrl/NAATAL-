@@ -2,7 +2,7 @@ import { Component, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { SiteProvider } from './context/SiteContext'
 import Header from './components/Header'
-import Hero from './components/Hero'
+import APropos from './components/APropos'
 import Audiovisuel from './components/Audiovisuel'
 import Prestations from './components/Prestations'
 import Cinema from './components/Cinema'
@@ -12,6 +12,7 @@ import Contact from './components/Contact'
 import Footer from './components/Footer'
 import Admin from './components/Admin'
 import Offres from './components/Offres'
+import FAQ from './components/FAQ'
 import WhatsAppCTA from './components/WhatsAppCTA'
 import './App.css'
 
@@ -83,11 +84,12 @@ function AppContent() {
       <Routes>
         <Route path="/" element={
           <>
-            <Hero />
-            <Audiovisuel />
+            <APropos />
             <Prestations />
+            <Audiovisuel />
             <Offres />
             <Partners />
+            <FAQ />
             <Contact />
           </>
         } />

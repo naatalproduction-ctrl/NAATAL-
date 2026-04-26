@@ -6251,6 +6251,13 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.kanban-column--dragover {
+  border-color: rgba(201, 168, 76, 0.4);
+  background: rgba(201, 168, 76, 0.04);
+  box-shadow: inset 0 0 20px rgba(201, 168, 76, 0.05);
 }
 
 .kanban-column-header {
@@ -6433,8 +6440,9 @@
 
 .kanban-card-edit-actions .btn-save,
 .kanban-card-edit-actions .btn-cancel {
-  flex: 1;
-  padding: 6px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
@@ -6451,8 +6459,8 @@
 }
 
 .kanban-card-edit-actions .btn-cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
 @media (max-width: 1200px) {
