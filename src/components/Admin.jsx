@@ -53,6 +53,90 @@ function AnimatedCounter({ value, duration = 800, prefix = '', suffix = '' }) {
   )
 }
 
+// Chip feature draggable + editable inline (offres admin)
+function FeatureChip({ value, index, total, excluded = false, onChange, onRemove, onMove, dragState, setDragState, listKey }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const inputRef = useRef(null)
+
+  useEffect(() => { setDraft(value) }, [value])
+  useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+
+  const commit = () => {
+    const v = draft.trim()
+    if (v && v !== value) onChange(v)
+    else setDraft(value)
+    setEditing(false)
+  }
+
+  const isDragging = dragState?.list === listKey && dragState?.from === index
+  const isHovered = dragState?.list === listKey && dragState?.over === index && dragState?.from !== index
+
+  return (
+    <div
+      className={`feature-chip ${excluded ? 'feature-chip--excluded' : ''} ${isDragging ? 'feature-chip--dragging' : ''} ${isHovered ? 'feature-chip--over' : ''}`}
+      draggable={!editing}
+      onDragStart={(e) => {
+        setDragState({ list: listKey, from: index, over: index })
+        e.dataTransfer.effectAllowed = 'move'
+        try { e.dataTransfer.setData('text/plain', String(index)) } catch (_) {}
+      }}
+      onDragOver={(e) => {
+        if (dragState?.list !== listKey) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (dragState.over !== index) setDragState({ ...dragState, over: index })
+      }}
+      onDrop={(e) => {
+        e.preventDefault()
+        if (dragState?.list === listKey && dragState.from !== index) {
+          onMove(dragState.from, index)
+        }
+        setDragState(null)
+      }}
+      onDragEnd={() => setDragState(null)}
+    >
+      <span className="feature-chip-grip" title="Glisser pour réordonner">⋮⋮</span>
+      <button
+        type="button"
+        className="feature-chip-move"
+        disabled={index === 0}
+        onClick={() => onMove(index, index - 1)}
+        title="Monter"
+      >▲</button>
+      <button
+        type="button"
+        className="feature-chip-move"
+        disabled={index === total - 1}
+        onClick={() => onMove(index, index + 1)}
+        title="Descendre"
+      >▼</button>
+
+      {editing ? (
+        <input
+          ref={inputRef}
+          className="feature-chip-input"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit() }
+            else if (e.key === 'Escape') { setDraft(value); setEditing(false) }
+          }}
+        />
+      ) : (
+        <span
+          className="feature-chip-text"
+          onClick={() => setEditing(true)}
+          title="Cliquer pour modifier"
+        >{value}</span>
+      )}
+
+      <button type="button" className="btn-remove-feature" onClick={onRemove} title="Supprimer">x</button>
+    </div>
+  )
+}
+
 export default function Admin() {
   const {
     medias,
@@ -1394,6 +1478,29 @@ export default function Admin() {
       setNewOffre({ ...newOffre, [field]: (newOffre[field] || []).filter((_, i) => i !== index) })
     }
   }
+
+  const updateOffreFeature = (field, index, value, isEditing = false) => {
+    if (isEditing && editingOffre) {
+      const arr = typeof editingOffre[field] === 'string' ? JSON.parse(editingOffre[field]) : editingOffre[field] || []
+      setEditingOffre({ ...editingOffre, [field]: arr.map((v, i) => (i === index ? value : v)) })
+    } else {
+      setNewOffre({ ...newOffre, [field]: (newOffre[field] || []).map((v, i) => (i === index ? value : v)) })
+    }
+  }
+
+  const moveOffreFeature = (field, from, to, isEditing = false) => {
+    const src = isEditing && editingOffre
+      ? (typeof editingOffre[field] === 'string' ? JSON.parse(editingOffre[field]) : editingOffre[field] || [])
+      : (newOffre[field] || [])
+    if (from < 0 || to < 0 || from >= src.length || to >= src.length || from === to) return
+    const arr = [...src]
+    const [moved] = arr.splice(from, 1)
+    arr.splice(to, 0, moved)
+    if (isEditing && editingOffre) setEditingOffre({ ...editingOffre, [field]: arr })
+    else setNewOffre({ ...newOffre, [field]: arr })
+  }
+
+  const [featureDrag, setFeatureDrag] = useState(null)
 
   // CRUD Partenaires
   const handleCreatePartner = async () => {
@@ -4563,7 +4670,18 @@ export default function Admin() {
                             <h4>Features incluses</h4>
                             <div className="features-list">
                               {(newOffre.features || []).map((f, i) => (
-                                <div key={i} className="feature-item"><span>{f}</span><button type="button" className="btn-remove-feature" onClick={() => removeOffreFeature('features', i)}>x</button></div>
+                                <FeatureChip
+                                  key={i}
+                                  index={i}
+                                  total={(newOffre.features || []).length}
+                                  value={f}
+                                  listKey="new-features"
+                                  dragState={featureDrag}
+                                  setDragState={setFeatureDrag}
+                                  onChange={(v) => updateOffreFeature('features', i, v)}
+                                  onRemove={() => removeOffreFeature('features', i)}
+                                  onMove={(from, to) => moveOffreFeature('features', from, to)}
+                                />
                               ))}
                             </div>
                             <div className="feature-input-group">
@@ -4575,7 +4693,19 @@ export default function Admin() {
                             <h4>Non inclus</h4>
                             <div className="features-list">
                               {(newOffre.not_included || []).map((f, i) => (
-                                <div key={i} className="feature-item" style={{opacity:0.5}}><span>{f}</span><button type="button" className="btn-remove-feature" onClick={() => removeOffreFeature('not_included', i)}>x</button></div>
+                                <FeatureChip
+                                  key={i}
+                                  index={i}
+                                  total={(newOffre.not_included || []).length}
+                                  value={f}
+                                  excluded
+                                  listKey="new-not-included"
+                                  dragState={featureDrag}
+                                  setDragState={setFeatureDrag}
+                                  onChange={(v) => updateOffreFeature('not_included', i, v)}
+                                  onRemove={() => removeOffreFeature('not_included', i)}
+                                  onMove={(from, to) => moveOffreFeature('not_included', from, to)}
+                                />
                               ))}
                             </div>
                             <div className="feature-input-group">
@@ -4662,7 +4792,18 @@ export default function Admin() {
                             <h4>Features incluses</h4>
                             <div className="features-list">
                               {(editingOffre.features || []).map((f, i) => (
-                                <div key={i} className="feature-item"><span>{f}</span><button type="button" className="btn-remove-feature" onClick={() => removeOffreFeature('features', i, true)}>x</button></div>
+                                <FeatureChip
+                                  key={i}
+                                  index={i}
+                                  total={(editingOffre.features || []).length}
+                                  value={f}
+                                  listKey="edit-features"
+                                  dragState={featureDrag}
+                                  setDragState={setFeatureDrag}
+                                  onChange={(v) => updateOffreFeature('features', i, v, true)}
+                                  onRemove={() => removeOffreFeature('features', i, true)}
+                                  onMove={(from, to) => moveOffreFeature('features', from, to, true)}
+                                />
                               ))}
                             </div>
                             <div className="feature-input-group">
@@ -4674,7 +4815,19 @@ export default function Admin() {
                             <h4>Non inclus</h4>
                             <div className="features-list">
                               {(editingOffre.not_included || []).map((f, i) => (
-                                <div key={i} className="feature-item" style={{opacity:0.5}}><span>{f}</span><button type="button" className="btn-remove-feature" onClick={() => removeOffreFeature('not_included', i, true)}>x</button></div>
+                                <FeatureChip
+                                  key={i}
+                                  index={i}
+                                  total={(editingOffre.not_included || []).length}
+                                  value={f}
+                                  excluded
+                                  listKey="edit-not-included"
+                                  dragState={featureDrag}
+                                  setDragState={setFeatureDrag}
+                                  onChange={(v) => updateOffreFeature('not_included', i, v, true)}
+                                  onRemove={() => removeOffreFeature('not_included', i, true)}
+                                  onMove={(from, to) => moveOffreFeature('not_included', from, to, true)}
+                                />
                               ))}
                             </div>
                             <div className="feature-input-group">

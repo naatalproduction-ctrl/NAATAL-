@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run build:seo",
+    "build:seo": "node scripts/generate-seo-pages.mjs && node scripts/generate-llms-and-mirrors.mjs",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx"
   },

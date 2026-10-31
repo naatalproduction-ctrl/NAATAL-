@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { offresAPI } from '../services/api'
 import './Offres.css'
 
 const WA_NUMBER = '2250719956586'
@@ -20,11 +21,23 @@ const WA_MESSAGES = {
   contact: encodeURIComponent(
     "Bonjour Naatal Studio 👋\n\nJe souhaite discuter d'un projet vidéo avec votre équipe.\n\nDans l'attente de votre retour 🙏"
   ),
+  brandfilm: encodeURIComponent(
+    "Bonjour Naatal Studio 👋\n\nJe suis intéressé(e) par le *Naatal Brand Film* (film corporate signature, 2-3 min).\n\nMon entreprise : [à préciser]\nObjectif : carte de visite vidéo annuelle\n\nJ'aimerais discuter de :\n→ Le concept créatif\n→ Le planning de tournage\n→ Le devis détaillé (3 à 5M FCFA)\n\nMerci 🙏"
+  ),
+  event: encodeURIComponent(
+    "Bonjour Naatal Studio 👋\n\nJe suis intéressé(e) par le *Naatal Event Coverage* (captation événement + livrables différés).\n\nÉvénement : [à préciser]\nDate : [à préciser]\nLieu : [à préciser]\n\nLivrables souhaités :\n→ Aftermovie 90s\n→ 3 capsules speakers\n→ Interviews & témoignages\n\nMerci de me revenir avec un devis (1,5 à 4M FCFA) 🙏"
+  ),
+  surmesure: encodeURIComponent(
+    "Bonjour Naatal Studio 👋\n\nJe souhaite discuter d'une *production sur-mesure* (au-delà de vos formules).\n\nNature du projet : [à préciser]\nDurée / ampleur : [à préciser]\nLieu(x) : [à préciser]\n\nJ'aimerais qu'on échange pour :\n→ Étudier le projet ensemble\n→ Recevoir un chiffrage personnalisé\n\nMerci 🙏"
+  ),
+  echange: encodeURIComponent(
+    "Bonjour Naatal Studio 👋\n\nJe souhaite réserver un échange de 20 minutes pour identifier la formule adaptée à mon projet.\n\nMon entreprise : [à préciser]\nMon besoin : [à préciser]\nDisponibilités : [à préciser]\n\nMerci 🙏"
+  ),
 }
 
 const waLink = (key) => `https://wa.me/${WA_NUMBER}?text=${WA_MESSAGES[key]}`
 
-const packages = [
+const FALLBACK_PACKAGES = [
   {
     id: 'essentiel',
     name: 'Essentiel',
@@ -90,7 +103,61 @@ const packages = [
   },
 ]
 
-const oneoffs = [
+const signatureOffers = [
+  {
+    id: 'brandfilm',
+    name: 'Naatal Brand Film',
+    tagline: 'Film corporate signature',
+    description:
+      "Le film qui définit votre marque pour les 12 prochains mois. 2 à 3 minutes de cinéma pour incarner qui vous êtes, ce que vous faites, et pourquoi ça compte.",
+    features: [
+      'Film 2–3 min · qualité cinéma (FX3 + optiques Sigma Art)',
+      'Direction artistique et écriture sur mesure',
+      'Multi-caméra · drone · habillage sonore',
+      'Versions web, corporate et réseaux sociaux',
+      'Livraison 4 à 6 semaines après tournage',
+    ],
+    assurance: 'Devis ferme · acompte 40% · solde à livraison',
+    range: '3 000 000 – 5 000 000',
+    waKey: 'brandfilm',
+  },
+  {
+    id: 'event',
+    name: 'Naatal Event Coverage',
+    tagline: 'Captation événement corporate',
+    description:
+      "Votre événement, capturé avec œil cinéma et livré sans délai. Aftermovie qui circule sur LinkedIn dès la semaine suivante, capsules speakers prêtes à publier, témoignages clients exploitables toute l'année.",
+    features: [
+      'Captation multi-caméra · jusqu’à 8h sur site',
+      'Aftermovie 90 secondes livré sous 5 jours',
+      '3 capsules speakers individuelles',
+      'Interviews et témoignages clients (jusqu’à 5)',
+      'Photos extraites en bonus',
+    ],
+    assurance: 'Événement 1 journée · journées additionnelles sur devis · backup matériel inclus',
+    range: '1 500 000 – 4 000 000',
+    waKey: 'event',
+  },
+  {
+    id: 'surmesure',
+    name: 'Production sur-mesure',
+    tagline: 'Au-delà des formules',
+    description:
+      "Films institutionnels longs, séries documentaires, campagnes multi-épisodes, productions hors Abidjan. Quand votre projet sort du cadre, on construit l'offre avec vous.",
+    features: [
+      'Étude de projet et chiffrage personnalisé',
+      'Équipe dédiée selon ampleur',
+      'Production multi-jours et multi-sites possibles',
+      'Tous livrables et formats négociés au brief',
+    ],
+    assurance: 'Premier échange offert · devis sous 5 jours ouvrés',
+    range: 'Sur devis',
+    custom: true,
+    waKey: 'surmesure',
+  },
+]
+
+const FALLBACK_ONEOFFS = [
   { name: 'Film institutionnel', detail: '3–5 min · multi-cam · habillage', range: '500 000 – 1 200 000' },
   { name: 'Couverture événement corporate', detail: 'Régie multi-caméra · montage J+2', range: '300 000 – 700 000' },
   { name: 'Film de lancement produit', detail: 'Scénario + tournage + montage cinématique', range: '400 000 – 900 000' },
@@ -99,8 +166,63 @@ const oneoffs = [
   { name: 'Film immobilier / promotion', detail: 'Drone + terrain + montage', range: '400 000 – 800 000' },
 ]
 
+const slugify = (s = '') =>
+  s.toString().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '')
+
+const resolveWaKey = (name) => {
+  const slug = slugify(name)
+  if (WA_MESSAGES[slug]) return slug
+  return 'devis'
+}
+
+const normalizePackage = (row) => ({
+  id: row.id,
+  name: row.name,
+  target: row.target || '',
+  price: Number(row.price) || 0,
+  period: row.period || '/ mois',
+  featured: !!row.is_featured,
+  description: row.description || '',
+  features: Array.isArray(row.features) ? row.features : [],
+  notIncluded: Array.isArray(row.not_included) ? row.not_included : [],
+  cta: row.cta || 'Choisir',
+  waKey: resolveWaKey(row.name),
+})
+
+const normalizeOneoff = (row) => ({
+  name: row.name,
+  detail: row.description || '',
+  range: row.period || '',
+})
+
 export default function Offres() {
   const [billing, setBilling] = useState('monthly')
+  const [apiData, setApiData] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    offresAPI.getActive()
+      .then(res => {
+        if (cancelled) return
+        if (res?.success && Array.isArray(res.data)) setApiData(res.data)
+      })
+      .catch(err => console.warn('Offres API:', err?.message || err))
+    return () => { cancelled = true }
+  }, [])
+
+  const packages = useMemo(() => {
+    if (!apiData) return FALLBACK_PACKAGES
+    const rows = apiData.filter(o => o.type === 'package').map(normalizePackage)
+    return rows.length ? rows : FALLBACK_PACKAGES
+  }, [apiData])
+
+  const oneoffs = useMemo(() => {
+    if (!apiData) return FALLBACK_ONEOFFS
+    const rows = apiData.filter(o => o.type === 'oneoff').map(normalizeOneoff)
+    return rows.length ? rows : FALLBACK_ONEOFFS
+  }, [apiData])
 
   return (
     <section id="offres" className="offres-v2">
@@ -123,13 +245,13 @@ export default function Offres() {
         </p>
 
         <div className="offres-v2-toggle">
-          {['monthly', 'oneoff'].map(b => (
+          {['monthly', 'oneoff', 'plus'].map(b => (
             <button
               key={b}
               className={`offres-v2-toggle-btn ${billing === b ? 'offres-v2-toggle-btn--active' : ''}`}
               onClick={() => setBilling(b)}
             >
-              {b === 'monthly' ? 'ABONNEMENT' : 'PROJET PONCTUEL'}
+              {b === 'monthly' ? 'ABONNEMENT' : b === 'oneoff' ? 'PROJET PONCTUEL' : 'PLUS'}
             </button>
           ))}
         </div>
@@ -246,6 +368,59 @@ export default function Offres() {
             </div>
           </motion.div>
         )}
+        {billing === 'plus' && (
+          <motion.div
+            key="plus"
+            className="offres-v2-autres-grid"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+          >
+            {signatureOffers.map((offer, i) => (
+              <motion.div
+                key={offer.id}
+                className="offres-v2-autres-card"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * i }}
+              >
+                <div className="offres-v2-autres-card-head">
+                  <p className="offres-v2-autres-card-tag">{offer.tagline}</p>
+                  <h4 className="offres-v2-autres-card-name">{offer.name}</h4>
+                </div>
+                <p className="offres-v2-autres-card-desc">{offer.description}</p>
+
+                <ul className="offres-v2-autres-card-list">
+                  {offer.features.map(f => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+
+                {offer.assurance && (
+                  <p className="offres-v2-autres-card-assurance">{offer.assurance}</p>
+                )}
+
+                <div className="offres-v2-autres-card-foot">
+                  <div className="offres-v2-autres-card-price">
+                    <span className="offres-v2-autres-card-range">{offer.range}</span>
+                    {!offer.custom && (
+                      <span className="offres-v2-autres-card-unit">FCFA{offer.period ? ` ${offer.period}` : ''}</span>
+                    )}
+                  </div>
+                  <a
+                    href={waLink(offer.waKey)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="offres-v2-autres-card-cta"
+                  >
+                    Discuter →
+                  </a>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Bottom CTA */}
@@ -256,11 +431,14 @@ export default function Offres() {
         transition={{ duration: 0.8, delay: 0.3 }}
         viewport={{ once: true }}
       >
-        <p className="offres-v2-bottom-terms">ACOMPTE 50% · CONTRAT 3 MOIS MIN · LIVRAISON RAPIDE</p>
-        <h3>Parlons de votre projet</h3>
-        <p className="offres-v2-bottom-sub">Réponse sous 24h · Devis gratuit</p>
-        <a href={waLink('contact')} target="_blank" rel="noopener noreferrer" className="offres-v2-bottom-cta">
-          Nous contacter sur WhatsApp →
+        <p className="offres-v2-bottom-terms">SANS ENGAGEMENT · ÉCHANGE DE 20 MINUTES</p>
+        <h3>Vous hésitez entre les deux ?</h3>
+        <p className="offres-v2-bottom-sub">
+          Parlons-en. Un échange de 20 minutes suffit pour identifier la formule
+          qui correspond à votre rythme, votre budget et vos ambitions.
+        </p>
+        <a href={waLink('echange')} target="_blank" rel="noopener noreferrer" className="offres-v2-bottom-cta">
+          Réserver un échange →
         </a>
       </motion.div>
     </section>
