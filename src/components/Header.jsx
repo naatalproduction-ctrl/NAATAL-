@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useSite } from '../context/SiteContext'
 import './Header.css'
 
 export default function Header() {
+  const { siteInfo } = useSite()
   const [isOpen, setIsOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
   const location = useLocation()
@@ -47,7 +49,7 @@ export default function Header() {
     { label: 'Prestations', href: '#prestations', type: 'anchor' },
     { label: 'Audiovisuel', href: '#audiovisuel', type: 'anchor' },
     { label: 'Cinéma', href: '/cinema', type: 'route' },
-    { label: 'Offres', href: '#offres', type: 'anchor' },
+    ...(siteInfo.offresEnabled ? [{ label: 'Offres', href: '#offres', type: 'anchor' }] : []),
     { label: 'Boutique', href: '/boutique', type: 'route' },
     { label: 'Contact', href: '#contact', type: 'anchor' }
   ]

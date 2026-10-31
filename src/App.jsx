@@ -1,6 +1,6 @@
 import { Component, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
-import { SiteProvider } from './context/SiteContext'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { SiteProvider, useSite } from './context/SiteContext'
 import Header from './components/Header'
 import APropos from './components/APropos'
 import Audiovisuel from './components/Audiovisuel'
@@ -67,7 +67,10 @@ class ErrorBoundary extends Component {
 
 function AppContent() {
   const location = useLocation()
+  const { siteInfo, loading } = useSite()
   const isAdminPage = location.pathname === '/admin'
+  const offresEnabled = siteInfo.offresEnabled === true
+  const hiddenOffresRoute = loading ? null : <Navigate to="/" replace />
 
   useEffect(() => {
     if (location.hash) {
@@ -87,7 +90,7 @@ function AppContent() {
             <APropos />
             <Prestations />
             <Audiovisuel />
-            <Offres />
+            {offresEnabled && <Offres />}
             <Partners />
             <FAQ />
             <Contact />
@@ -95,7 +98,7 @@ function AppContent() {
         } />
         <Route path="/boutique" element={<Boutique />} />
         <Route path="/cinema" element={<Cinema />} />
-        <Route path="/offres" element={<Offres />} />
+        <Route path="/offres" element={offresEnabled ? <Offres /> : hiddenOffresRoute} />
         <Route path="/admin" element={<Admin />} />
       </Routes>
       {!isAdminPage && <Footer />}

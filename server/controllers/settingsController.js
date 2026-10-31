@@ -91,6 +91,7 @@ const getPublicSiteInfo = async (req, res) => {
       email: '',
       phone: '',
       address: '',
+      offresEnabled: false,
       social: {}
     };
     
@@ -100,6 +101,7 @@ const getPublicSiteInfo = async (req, res) => {
       if (row.key === 'contact_email') siteInfo.email = row.value;
       if (row.key === 'contact_phone') siteInfo.phone = row.value;
       if (row.key === 'contact_address') siteInfo.address = row.value;
+      if (row.key === 'offres_enabled') siteInfo.offresEnabled = row.value === 'true';
       if (row.key.startsWith('social_')) {
         const network = row.key.replace('social_', '');
         siteInfo.social[network] = row.value;

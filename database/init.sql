@@ -213,7 +213,8 @@ INSERT INTO settings (key, value, type, description) VALUES
 ('social_facebook', 'https://facebook.com/naatalproduction', 'text', 'Lien Facebook'),
 ('social_instagram', 'https://instagram.com/naatalproduction', 'text', 'Lien Instagram'),
 ('social_youtube', 'https://youtube.com/@naatalproduction', 'text', 'Lien YouTube'),
-('social_linkedin', '', 'text', 'Lien LinkedIn')
+('social_linkedin', '', 'text', 'Lien LinkedIn'),
+('offres_enabled', 'false', 'boolean', 'Afficher les offres sur le site')
 ON CONFLICT (key) DO NOTHING;
 
 -- Admin par défaut (mot de passe: REDACTED)
