@@ -21,6 +21,24 @@
   text-transform: uppercase;
 }
 
+.footer-services {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 24px;
+}
+
+.footer-services a {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-services a:hover {
+  color: var(--color-accent);
+}
+
 .social-links {
   display: flex;
   gap: 12px;

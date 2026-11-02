@@ -1356,6 +1356,29 @@
   cursor: not-allowed;
 }
 
+.setting-save {
+  margin-top: 12px;
+  padding: 10px 18px;
+  background: #c9a84c;
+  border: none;
+  border-radius: 10px;
+  color: #060606;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.setting-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.setting-card .user-alert {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
 .setting-note {
   margin-top: 18px;
   padding: 14px;

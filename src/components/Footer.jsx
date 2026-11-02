@@ -1,7 +1,12 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
+import { useSite } from '../context/SiteContext'
+import { SERVICE_PAGES } from '../data/site'
 import './Footer.css'
 
 export default function Footer() {
+  const { siteInfo } = useSite()
+  const siteName = siteInfo.name || 'NAATAL Studio'
   const currentYear = new Date().getFullYear()
 
   const socialLinks = [
@@ -46,7 +51,14 @@ export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-content">
-        <p className="footer-brand">NAATAL Production</p>
+        <p className="footer-brand">{siteName}</p>
+
+        <nav className="footer-services" aria-label="Nos services">
+          {SERVICE_PAGES.map(service => (
+            <Link key={service.slug} to={`/services/${service.slug}`}>{service.name}</Link>
+          ))}
+          <Link to="/cinema">Cinéma</Link>
+        </nav>
 
         <div className="social-links">
           {socialLinks.map((link, index) => (
@@ -57,6 +69,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="social-link"
               title={link.name}
+              aria-label={link.name}
               whileHover={{ scale: 1.1, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -66,7 +79,7 @@ export default function Footer() {
         </div>
 
         <p className="footer-copy">
-          &copy; {currentYear} NAATAL Production. Tous droits reserves.
+          &copy; {currentYear} {siteName}. Tous droits réservés.
         </p>
       </div>
     </footer>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { prestationsAPI } from '../services/api'
+import { SERVICE_PAGES } from '../data/site'
 import './Prestations.css'
 
 const iconMap = {
@@ -184,6 +186,12 @@ export default function Prestations() {
                 )
               })}
             </div>
+
+            <nav className="prestations-specialites" aria-label="Nos spécialités">
+              {SERVICE_PAGES.map(service => (
+                <Link key={service.slug} to={`/services/${service.slug}`}>{service.name}</Link>
+              ))}
+            </nav>
 
             {/* Bottom CTA */}
             <motion.div

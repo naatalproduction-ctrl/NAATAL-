@@ -117,13 +117,6 @@
   margin: 0 auto 40px;
 }
 
-.apropos-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
 /* ---- Stats bar ---- */
 .apropos-stats {
   display: flex;
@@ -287,17 +280,6 @@
 
   .apropos-subtitle {
     font-size: 15px;
-  }
-
-  .apropos-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .apropos-buttons .btn {
-    width: 100%;
-    max-width: 320px;
-    justify-content: center;
   }
 
   .apropos-stats {

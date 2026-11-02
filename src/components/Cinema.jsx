@@ -2,9 +2,14 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { cinemaAPI } from '../services/api'
+import { useSite } from '../context/SiteContext'
+import { BUSINESS, CINEMA_INTRO, telHref } from '../data/site'
 import './Cinema.css'
 
 export default function Cinema() {
+  const { siteInfo } = useSite()
+  const email = siteInfo.email || BUSINESS.email
+  const phone = siteInfo.phone || BUSINESS.phone
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -77,6 +82,7 @@ export default function Cinema() {
           >
             Cinéma
           </motion.h1>
+          <p className="cinema-intro">{CINEMA_INTRO}</p>
         </motion.div>
 
         {loading && (
@@ -194,18 +200,18 @@ export default function Cinema() {
         >
           <h3>Contact</h3>
           <div className="cinema-contact-info">
-            <a href="mailto:hello@naatalstudio.com" className="contact-item">
+            <a href={`mailto:${email}`} className="contact-item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                 <polyline points="22,6 12,13 2,6"></polyline>
               </svg>
-              <span>hello@naatalstudio.com</span>
+              <span>{email}</span>
             </a>
-            <a href="tel:+2250719956586" className="contact-item">
+            <a href={telHref(phone)} className="contact-item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
               </svg>
-              <span>+225 07 19 95 65 86</span>
+              <span>{phone}</span>
             </a>
           </div>
         </motion.div>

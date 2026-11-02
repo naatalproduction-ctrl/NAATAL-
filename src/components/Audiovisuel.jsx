@@ -1,21 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useSite } from '../context/SiteContext'
+import { VIDEO_DESCRIPTIONS, getYouTubeId } from '../data/site'
 import './Audiovisuel.css'
-
-// Descriptions par défaut si la base est vide
-const defaultDescriptions = {
-  'P4MzYbSNYEI': 'Vidéo de campagne législative pour Djé Bi Landry, candidat indépendant à Gohitafla. Un message de remerciement sincère à ses concitoyens, porté par la détermination et la conviction d\'un homme engagé pour sa région.',
-  'GYvw3r4pHo8': 'Couverture d\'une conférence de presse B2B organisée par Hitachi à Abidjan, réunissant les prestataires de climatisation de la région. Présentation des solutions innovantes et des partenariats stratégiques pour le marché ivoirien.',
-  'Xnahc3dyxI8': 'Vidéo promotionnelle pour Cosy Home, boutique de décoration intérieure basée à Abidjan. Mise en valeur de son univers déco, de sa boutique en ligne et de son showroom, pour une jeune entreprise qui sublime les intérieurs ivoiriens.',
-}
-
-// Extract YouTube video ID from any URL format
-const getYouTubeId = (url) => {
-  if (!url) return null
-  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
-  return match ? match[1] : null
-}
 
 function VideoCard({ media, index }) {
   const [playing, setPlaying] = useState(false)
@@ -63,8 +50,8 @@ function VideoCard({ media, index }) {
 
       {/* Info */}
       <div className="av-item-info">
-        <h2>{media.name}</h2>
-        <p className="av-item-desc">{media.description || defaultDescriptions[videoId] || ''}</p>
+        <h3>{media.name}</h3>
+        <p className="av-item-desc">{media.description || VIDEO_DESCRIPTIONS[videoId] || ''}</p>
       </div>
     </motion.div>
   )

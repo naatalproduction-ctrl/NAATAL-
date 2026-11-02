@@ -70,7 +70,7 @@ export const defaultMedias = [
 export const defaultSiteInfo = {
   name: 'NAATAL Production',
   slogan: 'L\'Art de Raconter des Histoires',
-  email: 'naatalproduction@gmail.com',
+  email: 'hello@naatalstudio.com',
   phone: '+225 07 19 95 65 86',
   address: 'Abidjan, Côte d\'Ivoire',
   social: {

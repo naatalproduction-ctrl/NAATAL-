@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { messagesAPI } from '../services/api'
+import { useSite } from '../context/SiteContext'
+import { BUSINESS, telHref } from '../data/site'
 import './Contact.css'
 
 export default function Contact() {
+  const { siteInfo } = useSite()
+  const email = siteInfo.email || BUSINESS.email
+  const phone = siteInfo.phone || BUSINESS.phone
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
 
@@ -71,7 +76,7 @@ export default function Contact() {
               </div>
               <div>
                 <h4>Email</h4>
-                <a href="mailto:hello@naatalstudio.com">hello@naatalstudio.com</a>
+                <a href={`mailto:${email}`}>{email}</a>
               </div>
             </div>
 
@@ -83,7 +88,7 @@ export default function Contact() {
               </div>
               <div>
                 <h4>Téléphone</h4>
-                <a href="tel:+2250719956586">+225 07 19 95 65 86</a>
+                <a href={telHref(phone)}>{phone}</a>
               </div>
             </div>
 

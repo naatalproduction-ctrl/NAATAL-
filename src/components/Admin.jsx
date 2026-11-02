@@ -137,6 +137,12 @@ function FeatureChip({ value, index, total, excluded = false, onChange, onRemove
   )
 }
 
+const GENERAL_FIELDS = [
+  { key: 'site_name', info: 'name', label: 'Nom du site', type: 'text' },
+  { key: 'contact_email', info: 'email', label: 'Email', type: 'email' },
+  { key: 'contact_phone', info: 'phone', label: 'Téléphone', type: 'tel' },
+]
+
 export default function Admin() {
   const {
     medias,
@@ -153,7 +159,8 @@ export default function Admin() {
     markMessageAsRead,
     deleteMessage,
     unreadCount,
-    loading
+    loading,
+    updateSettings
   } = useSite()
 
   const [activeTab, setActiveTabState] = useState(() => {
@@ -167,6 +174,37 @@ export default function Admin() {
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [generalDraft, setGeneralDraft] = useState({})
+  const [generalStatus, setGeneralStatus] = useState(null)
+  const [savingGeneral, setSavingGeneral] = useState(false)
+  const generalValue = (field) => generalDraft[field.key] ?? siteInfo[field.info] ?? ''
+  const generalChanges = Object.fromEntries(
+    GENERAL_FIELDS
+      .filter(field => generalValue(field).trim() !== (siteInfo[field.info] || ''))
+      .map(field => [field.key, generalValue(field).trim()])
+  )
+
+  const handleSaveGeneral = async () => {
+    const missing = GENERAL_FIELDS.find(field => !generalValue(field).trim())
+    if (missing) {
+      setGeneralStatus({ type: 'error', text: `${missing.label} : champ requis` })
+      return
+    }
+    if (!/^\S+@\S+\.\S+$/.test(generalValue(GENERAL_FIELDS[1]).trim())) {
+      setGeneralStatus({ type: 'error', text: 'Adresse email invalide' })
+      return
+    }
+    setSavingGeneral(true)
+    setGeneralStatus(null)
+    const result = await updateSettings(generalChanges)
+    setSavingGeneral(false)
+    if (result?.success) {
+      setGeneralDraft({})
+      setGeneralStatus({ type: 'success', text: 'Informations enregistrées' })
+    } else {
+      setGeneralStatus({ type: 'error', text: result?.error || 'Enregistrement impossible' })
+    }
+  }
   const [darkMode, setDarkMode] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState(new Date())
@@ -6887,19 +6925,32 @@ export default function Admin() {
                 <div className="settings-grid">
                   <motion.div className="setting-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                     <h3>Informations générales</h3>
-                    <div className="setting-item">
-                      <label>Nom du site</label>
-                      <input type="text" defaultValue={siteInfo.name} disabled />
-                    </div>
-                    <div className="setting-item">
-                      <label>Email</label>
-                      <input type="email" defaultValue={siteInfo.email} disabled />
-                    </div>
-                    <div className="setting-item">
-                      <label>Téléphone</label>
-                      <input type="text" defaultValue={siteInfo.phone} disabled />
-                    </div>
-                    <p className="setting-note">Contactez le développeur pour modifier ces paramètres.</p>
+                    {GENERAL_FIELDS.map(field => (
+                      <div className="setting-item" key={field.key}>
+                        <label htmlFor={`setting-${field.key}`}>{field.label}</label>
+                        <input
+                          id={`setting-${field.key}`}
+                          type={field.type}
+                          maxLength={100}
+                          value={generalValue(field)}
+                          onChange={(e) => {
+                            setGeneralDraft(draft => ({ ...draft, [field.key]: e.target.value }))
+                            setGeneralStatus(null)
+                          }}
+                        />
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      className="setting-save"
+                      onClick={handleSaveGeneral}
+                      disabled={savingGeneral || Object.keys(generalChanges).length === 0}
+                    >
+                      {savingGeneral ? 'Enregistrement...' : 'Enregistrer'}
+                    </button>
+                    {generalStatus && (
+                      <div className={`user-alert ${generalStatus.type}`}>{generalStatus.text}</div>
+                    )}
                   </motion.div>
 
                   <motion.div className="setting-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
@@ -6909,6 +6960,7 @@ export default function Admin() {
                       <span>PostgreSQL connecté</span>
                     </div>
                     <ul className="db-info">
+                      <li><strong>Version du site :</strong> {__APP_VERSION__}</li>
                       <li><strong>Tables:</strong> medias, messages, settings</li>
                       <li><strong>Médias:</strong> {totalMedias} enregistrements</li>
                       <li><strong>Messages:</strong> {messages.length} enregistrements</li>

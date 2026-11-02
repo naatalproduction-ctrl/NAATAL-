@@ -5,12 +5,9 @@ import Header from './components/Header'
 import APropos from './components/APropos'
 import Audiovisuel from './components/Audiovisuel'
 import Prestations from './components/Prestations'
-import Cinema from './components/Cinema'
-import Boutique from './components/Boutique'
 import Partners from './components/Partners'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
-import Offres from './components/Offres'
 import FAQ from './components/FAQ'
 import WhatsAppCTA from './components/WhatsAppCTA'
 import RouteMeta from './components/RouteMeta'
@@ -18,6 +15,10 @@ import NotFound from './components/NotFound'
 import './App.css'
 
 const Admin = lazy(() => import('./components/Admin'))
+const Boutique = lazy(() => import('./components/Boutique'))
+const Cinema = lazy(() => import('./components/Cinema'))
+const Offres = lazy(() => import('./components/Offres'))
+const ServicePage = lazy(() => import('./components/ServicePage'))
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -88,24 +89,27 @@ function AppContent() {
     <div className="app">
       <RouteMeta />
       {!isAdminPage && <Header />}
-      <Routes>
-        <Route path="/" element={
-          <>
-            <APropos />
-            <Prestations />
-            <Audiovisuel />
-            {offresEnabled && <Offres />}
-            <Partners />
-            <FAQ />
-            <Contact />
-          </>
-        } />
-        <Route path="/boutique" element={<Boutique />} />
-        <Route path="/cinema" element={<Cinema />} />
-        <Route path="/offres" element={offresEnabled ? <Offres /> : hiddenOffresRoute} />
-        <Route path="/admin" element={<Suspense fallback={null}><Admin /></Suspense>} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Suspense fallback={null}>
+        <Routes>
+          <Route path="/" element={
+            <>
+              <APropos />
+              <Prestations />
+              <Audiovisuel />
+              {offresEnabled && <Offres />}
+              <Partners />
+              <FAQ />
+              <Contact />
+            </>
+          } />
+          <Route path="/boutique" element={<Boutique />} />
+          <Route path="/cinema" element={<Cinema />} />
+          <Route path="/offres" element={offresEnabled ? <Offres /> : hiddenOffresRoute} />
+          <Route path="/services/:slug" element={<ServicePage />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
       {!isAdminPage && <Footer />}
       {!isAdminPage && <WhatsAppCTA />}
     </div>

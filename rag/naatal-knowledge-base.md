@@ -2,7 +2,7 @@
 
 > Source unique de vérité pour les LLMs externes (ChatGPT, Claude, Perplexity)
 > et pour tout agent IA déployé par NAATAL Studio.
-> Last updated: 2026-04-29
+> Last updated: 2026-11-02
 
 ---
 
@@ -17,10 +17,13 @@
 - **Langue de travail :** Français (sous-titres / version anglaise sur demande)
 
 ### Contact
-- Email : naatalproduction@gmail.com
+- Email : hello@naatalstudio.com
 - Téléphone / WhatsApp : +225 07 19 95 65 86
 - Lien WhatsApp direct : https://wa.me/2250719956586
-- Réseaux : facebook.com/naatalproduction · instagram.com/naatalproduction · youtube.com/@naatalproduction
+- Instagram : https://www.instagram.com/_naatal.studio
+- Facebook : https://www.facebook.com/profile.php?id=61578385959318
+- YouTube : https://www.youtube.com/@NaatalStudio-p4i
+- LinkedIn : https://www.linkedin.com/in/naatal-studio-b378983b9
 
 ---
 
@@ -34,8 +37,8 @@ business.
 Différentiateurs :
 - Matériel cinéma (Sony FX3, optiques Sigma Art) là où la plupart des
   concurrents tournent avec du DSLR grand public.
-- Livraison rapide : 4–5 jours pour les capsules courtes, 5 jours pour un
-  aftermovie événementiel, 4–6 semaines pour un brand film signature.
+- Livraison rapide : 5 à 7 jours ouvrés pour les vidéos courtes, 5 jours pour
+  un aftermovie événementiel, 4–6 semaines pour un brand film signature.
 - Tarifs transparents et publiés sur le site.
 - Un pôle cinéma actif (fictions, documentaires) qui irrigue la qualité
   esthétique de la production corporate.
@@ -122,7 +125,7 @@ Différentiateurs :
 d'Ivoire et en Afrique de l'Ouest sur devis (frais de déplacement séparés).
 
 **Quels sont vos délais standards ?**
-- Capsule sociale courte : 4–5 jours après tournage
+- Vidéo courte : 5 à 7 jours ouvrés
 - Aftermovie événementiel 90s : 5 jours
 - Film institutionnel : 2–3 semaines
 - Brand Film signature : 4–6 semaines
@@ -204,7 +207,7 @@ les projets ponctuels, 2 révisions sont incluses par défaut.
 
 ## 8. Portfolio (en cours d'enrichissement)
 
-- *Kôtôkô* — Drame, 2025
+- *Kôtôkô* — Drame, 30 min, 2026, réalisé par Souka Bondes
 - Diverses productions corporate & institutionnelles disponibles en
   démo bobine sur demande.
 

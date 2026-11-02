@@ -60,7 +60,7 @@ export default function Header() {
         <div className="header-content">
           <div className="logo">
             <Link to="/" onClick={() => { setIsOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
-              <img src="/img/logo.png" alt="NAATAL Logo" className="logo-image" />
+              <img src="/img/logo.png" alt="NAATAL Studio, retour à l'accueil" className="logo-image" />
             </Link>
           </div>
 

@@ -232,7 +232,7 @@
   padding: 20px 0;
 }
 
-.av-item-info h2 {
+.av-item-info h3 {
   font-family: var(--font-display, 'Inter', sans-serif);
   font-size: clamp(24px, 3vw, 32px);
   font-weight: 700;
@@ -315,7 +315,7 @@
     border-radius: 12px;
   }
 
-  .av-item-info h2 {
+  .av-item-info h3 {
     font-size: 22px;
   }
 
