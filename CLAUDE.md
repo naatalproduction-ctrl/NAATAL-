@@ -149,22 +149,15 @@ Deploy to the server only when the user explicitly asks in the current conversat
 
 Deploys authenticate with an SSH key. Keep credentials out of tracked files, because the GitHub repo is public.
 
-**Frontend** (after changes to `src/`, `public/`, `scripts/` or `rag/`):
 ```bash
-VITE_API_URL=https://naatalstudio.com/api npm run build
-rsync -avz --delete --exclude='server.js' --exclude='package.json' --exclude='package-lock.json' --exclude='node_modules' --exclude='.env' --exclude='.env.example' --exclude='config' --exclude='controllers' --exclude='middleware' --exclude='models' --exclude='routes' --exclude='uploads' --exclude='init.sql' dist/ "$NAATAL_DEPLOY_HOST:/var/www/naatal/dist/"
+bash scripts/deploy.sh --dry-run  # Show what would change, without writing to the server
+bash scripts/deploy.sh            # Back up the server, deploy the backend, then the frontend
+bash scripts/deploy.sh --nginx    # Apply scripts/nginx-update.sh; asks for the sudo password
 ```
 
-**Backend** (after changes to `server/`):
-```bash
-rsync -avz --exclude='node_modules' --exclude='.env' --exclude='uploads' server/ "$NAATAL_DEPLOY_HOST:/var/www/naatal/server/"
-ssh "$NAATAL_DEPLOY_HOST" "cd /var/www/naatal/server && pm2 restart naatal-api"
-```
-
-For a full deploy, run the frontend steps and then the backend steps.
-
-- Wait about 10s between SSH connections to avoid the server's rate limit.
-- Never overwrite `.env`, `node_modules` or `uploads` on the server.
-- Restart PM2 only if the backend changed.
-- `public/videos/` is gitignored and holds only READMEs locally, so the frontend rsync's `--delete` removes any video that exists only on the server.
-- Neither command applies SQL changes; run those on the server separately.
+- `deploy.sh` runs from a clean `main`, builds, and restores the backup if the API fails its health check. It prints the rollback command at the end; backups are in `~/naatal-backups` on the server.
+- `joseph` has no passwordless sudo, so nginx changes need the user. `nginx-update.sh` restores the previous config if `nginx -t` fails.
+- `deploy.sh` skips `controllers/prospectsController.js` while the server's `.env` has no `SERPER_API_KEY`, so prospect search keeps working on the old file.
+- It never touches `.env`, `node_modules` or `uploads`.
+- `public/videos/` is gitignored and holds only READMEs locally, so the frontend's delete step removes any video that exists only on the server.
+- It doesn't apply SQL changes; run those on the server separately.

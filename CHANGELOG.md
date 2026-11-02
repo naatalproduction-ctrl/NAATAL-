@@ -10,9 +10,13 @@ Les évolutions du site NAATAL Studio sont notées ici. Le projet suit le [versi
 
 ## [Non publié]
 
+### Ajouté
+
+- Scripts `deploy.sh` et `nginx-update.sh` : sauvegarde du serveur, simulation et retour arrière automatique.
+
 ### Modifié
 
-- Règle nginx des pages de services documentée dans `seo/nginx-seo.conf`, à appliquer avant le déploiement complet.
+- Règle nginx des pages de services documentée dans `seo/nginx-seo.conf`.
 
 ## [1.0.0] - 2026-11-02
 
