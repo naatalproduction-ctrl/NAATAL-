@@ -51,7 +51,7 @@ createdb naatal_db
 npm run db:init
 ```
 
-`db:init` is for empty databases only: `offres.sql` has no conflict handling, so rerunning it duplicates its rows. On an existing database, load only the files you need with `psql -d naatal_db -f <file>`. Rerunning `init.sql` is safe, apart from harmless `CREATE TRIGGER` errors.
+Seed data only goes into empty tables, so the SQL files can be rerun on an existing database, apart from harmless `CREATE TRIGGER` errors. Don't rely on `ON CONFLICT DO NOTHING` for seeds: these tables have no unique constraint, so it never fires.
 
 On this Mac, PostgreSQL 15 comes from Homebrew and isn't on `PATH`; its tools are in `/opt/homebrew/opt/postgresql@15/bin`.
 

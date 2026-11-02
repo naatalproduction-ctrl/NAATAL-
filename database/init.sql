@@ -195,13 +195,17 @@ INSERT INTO categories (slug, name, description, icon, color, display_order) VAL
 ON CONFLICT (slug) DO NOTHING;
 
 -- Médias par défaut
+DO $$
+BEGIN
+IF NOT EXISTS (SELECT 1 FROM medias) THEN
 INSERT INTO medias (name, description, type, url, category_id, featured, display_order) VALUES
 -- Documentaires
 ('Documentaire - Les Racines', 'Un voyage au coeur des traditions africaines', 'youtube', 'https://www.youtube.com/embed/P4MzYbSNYEI', 1, true, 1),
 -- Corporate
 ('MAS & HITACHI', 'Film institutionnel pour MAS & HITACHI', 'youtube', 'https://www.youtube.com/embed/ldC0Da_dF3E', 2, true, 1),
-('Cosy Home', 'Présentation de la marque Cosy Home', 'youtube', 'https://www.youtube.com/embed/Xnahc3dyxI8', 2, true, 2)
-ON CONFLICT DO NOTHING;
+('Cosy Home', 'Présentation de la marque Cosy Home', 'youtube', 'https://www.youtube.com/embed/Xnahc3dyxI8', 2, true, 2);
+END IF;
+END $$;
 
 -- Paramètres du site
 INSERT INTO settings (key, value, type, description) VALUES
@@ -364,14 +368,18 @@ CREATE TRIGGER update_prestations_updated_at BEFORE UPDATE ON prestations
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Données par défaut: Prestations
+DO $$
+BEGIN
+IF NOT EXISTS (SELECT 1 FROM prestations) THEN
 INSERT INTO prestations (title, description, icon, details, display_order, status) VALUES
 ('Conception', 'De l''idée au projet structuré, nous transformons votre vision en un plan de production concret et créatif.', 'conception', '["Brainstorming créatif", "Écriture de script & scénario", "Storyboard détaillé", "Note d''intention artistique", "Repérages de lieux", "Plan de travail complet"]', 1, 'active'),
 ('Gestion de Projet', 'Un accompagnement stratégique de A à Z pour garantir le succès de votre production audiovisuelle.', 'gestion', '["Sélection des prestataires", "Organisation du planning", "Conseils techniques avancés", "Devis & gestion budgétaire", "Accompagnement complet", "Suivi qualité"]', 2, 'active'),
 ('Pré-Production', 'La phase cruciale qui prépare chaque détail pour un tournage fluide et professionnel.', 'preproduction', '["Casting & direction artistique", "Gestion éditoriale", "Gestion budgétaire détaillée", "Scénographie & décors", "Charte graphique", "Planification logistique"]', 3, 'active'),
 ('Production', 'Tournage professionnel avec une équipe expérimentée et du matériel de pointe.', 'production', '["Gestion complète de tournage", "Location d''espace avec équipe", "Matériel professionnel haut de gamme", "Construction de décors sur mesure", "Direction de la photographie", "Captation multi-caméras"]', 4, 'active'),
 ('Post-Production', 'Sublimer vos images avec un montage créatif et une finition irréprochable.', 'postproduction', '["Montage créatif & narratif", "Étalonnage colorimétrique", "Mixage sonore professionnel", "Motion design & effets visuels", "Sous-titrage & localisation", "Exports multi-formats"]', 5, 'active'),
-('Diffusion', 'Optimiser la distribution de votre contenu pour atteindre votre audience cible sur tous les supports.', 'diffusion', '["Supports de diffusion adaptés", "Encodages multiples (SD/HD/4K)", "PAD régie numérique", "Distribution dématérialisée", "Stratégie de diffusion", "Optimisation multi-plateformes"]', 6, 'active')
-ON CONFLICT DO NOTHING;
+('Diffusion', 'Optimiser la distribution de votre contenu pour atteindre votre audience cible sur tous les supports.', 'diffusion', '["Supports de diffusion adaptés", "Encodages multiples (SD/HD/4K)", "PAD régie numérique", "Distribution dématérialisée", "Stratégie de diffusion", "Optimisation multi-plateformes"]', 6, 'active');
+END IF;
+END $$;
 
 -- ============================================
 -- TABLE: tasks

@@ -35,6 +35,9 @@ CREATE TRIGGER update_offres_updated_at
 -- Seed : Packages mensuels
 -- ============================================
 
+DO $$
+BEGIN
+IF NOT EXISTS (SELECT 1 FROM offres) THEN
 INSERT INTO offres (name, type, target, description, price, period, features, not_included, cta, is_featured, display_order) VALUES
 (
   'Essentiel',
@@ -159,3 +162,5 @@ INSERT INTO offres (name, type, target, description, price, period, features, no
   false,
   15
 );
+END IF;
+END $$;

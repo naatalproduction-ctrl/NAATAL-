@@ -142,6 +142,9 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 -- ============================================
 
 -- Profil
+DO $$
+BEGIN
+IF NOT EXISTS (SELECT 1 FROM portfolio_profile) THEN
 INSERT INTO portfolio_profile (
     artist_name, subtitle, bio_title, bio_text1, bio_text2,
     badge_text, hero_title_line1, hero_title_line2, hero_subtitle,
@@ -163,38 +166,56 @@ INSERT INTO portfolio_profile (
     'soukavisuals.com',
     'Envie de collaborer ?',
     'Vous avez un projet ambitieux, une vision à concrétiser ? Chaque grande création commence par une conversation.'
-) ON CONFLICT DO NOTHING;
+);
+END IF;
+END $$;
 
 -- Stats
+DO $$
+BEGIN
+IF NOT EXISTS (SELECT 1 FROM portfolio_stats) THEN
 INSERT INTO portfolio_stats (value, label, display_order) VALUES
 (8, 'Années', 1),
 (47, 'Projets', 2),
-(12, 'Awards', 3)
-ON CONFLICT DO NOTHING;
+(12, 'Awards', 3);
+END IF;
+END $$;
 
 -- Projets
+DO $$
+BEGIN
+IF NOT EXISTS (SELECT 1 FROM portfolio_projects) THEN
 INSERT INTO portfolio_projects (name, category, description, year, gradient_from, gradient_to, display_order) VALUES
 ('Nocturn Gallery', 'Direction Artistique', 'Galerie d''art immersive avec navigation 3D et transitions cinématiques.', '2026', 'accent-dim', 'warm-dim', 1),
 ('Analog Studio', 'Développement Web', 'Plateforme créative pour cinéastes et photographes argentiques.', '2025', 'silver-dim', 'accent-dim', 2),
 ('Maison Lumiere', 'Brand Identity', 'Identité visuelle pour une marque de luxe parisienne.', '2025', 'warm-dim', 'silver-dim', 3),
-('Cadence Film', 'Motion Design', 'Expérience interactive pour un festival de cinéma.', '2024', 'accent-dim', 'glass', 4)
-ON CONFLICT DO NOTHING;
+('Cadence Film', 'Motion Design', 'Expérience interactive pour un festival de cinéma.', '2024', 'accent-dim', 'glass', 4);
+END IF;
+END $$;
 
 -- Skills
+DO $$
+BEGIN
+IF NOT EXISTS (SELECT 1 FROM portfolio_skills) THEN
 INSERT INTO portfolio_skills (name, icon, description, percentage, display_order) VALUES
 ('Direction Artistique', '◆', 'Vision créative, identité visuelle, storytelling', 95, 1),
 ('UI / UX Design', '○', 'Interfaces, prototypage, Figma', 90, 2),
 ('Front-End Dev', '△', 'React, Next.js, Three.js, GSAP', 88, 3),
 ('Motion Design', '◊', 'After Effects, Lottie, animations', 85, 4),
 ('Branding', '●', 'Logos, charte graphique, direction', 82, 5),
-('Cinématographie', '✦', 'DaVinci, color grading, composition', 78, 6)
-ON CONFLICT DO NOTHING;
+('Cinématographie', '✦', 'DaVinci, color grading, composition', 78, 6);
+END IF;
+END $$;
 
 -- Marquee
+DO $$
+BEGIN
+IF NOT EXISTS (SELECT 1 FROM portfolio_marquee) THEN
 INSERT INTO portfolio_marquee (text, display_order) VALUES
 ('Design', 1), ('Développement', 2), ('Motion', 3),
-('Branding', 4), ('Création', 5), ('Visuals', 6)
-ON CONFLICT DO NOTHING;
+('Branding', 4), ('Création', 5), ('Visuals', 6);
+END IF;
+END $$;
 
 -- ============================================
 SELECT 'Tables portfolio créées avec succès!' as status;
