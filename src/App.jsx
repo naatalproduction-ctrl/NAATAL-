@@ -1,4 +1,4 @@
-import { Component, useEffect } from 'react'
+import { Component, Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { SiteProvider, useSite } from './context/SiteContext'
 import Header from './components/Header'
@@ -10,11 +10,14 @@ import Boutique from './components/Boutique'
 import Partners from './components/Partners'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
-import Admin from './components/Admin'
 import Offres from './components/Offres'
 import FAQ from './components/FAQ'
 import WhatsAppCTA from './components/WhatsAppCTA'
+import RouteMeta from './components/RouteMeta'
+import NotFound from './components/NotFound'
 import './App.css'
+
+const Admin = lazy(() => import('./components/Admin'))
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -83,6 +86,7 @@ function AppContent() {
 
   return (
     <div className="app">
+      <RouteMeta />
       {!isAdminPage && <Header />}
       <Routes>
         <Route path="/" element={
@@ -99,7 +103,8 @@ function AppContent() {
         <Route path="/boutique" element={<Boutique />} />
         <Route path="/cinema" element={<Cinema />} />
         <Route path="/offres" element={offresEnabled ? <Offres /> : hiddenOffresRoute} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin" element={<Suspense fallback={null}><Admin /></Suspense>} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
       {!isAdminPage && <Footer />}
       {!isAdminPage && <WhatsAppCTA />}

@@ -82,7 +82,7 @@ export default function APropos() {
           animate="visible"
         >
           <motion.span variants={itemVariants} className="apropos-label">
-            À propos de nous
+            Production audiovisuelle à Abidjan
           </motion.span>
 
           <motion.h1 variants={itemVariants} className="apropos-title">

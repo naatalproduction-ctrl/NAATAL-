@@ -96,9 +96,10 @@ const orgJsonLd = {
     addressCountry: 'CI',
   },
   sameAs: [
-    'https://facebook.com/naatalproduction',
-    'https://instagram.com/naatalproduction',
-    'https://youtube.com/@naatalproduction',
+    'https://www.instagram.com/_naatal.studio',
+    'https://www.facebook.com/profile.php?id=61578385959318',
+    'https://www.youtube.com/@NaatalStudio-p4i',
+    'https://www.linkedin.com/in/naatal-studio-b378983b9',
   ],
 }
 
