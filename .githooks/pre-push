@@ -1,0 +1,21 @@
+#!/bin/sh
+# Verifie les commits envoyes et refuse les references de sauvegarde locales
+zero=0000000000000000000000000000000000000000
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/*|refs/tags/*) ;;
+    *)
+      echo "Push refusé : $remote_ref n'est ni une branche ni un tag." >&2
+      exit 1
+      ;;
+  esac
+
+  [ "$local_sha" = "$zero" ] && continue
+
+  if [ "$remote_sha" = "$zero" ]; then
+    node scripts/check-secrets.mjs --range "$local_sha" --not --remotes || exit 1
+  else
+    node scripts/check-secrets.mjs --range "$remote_sha..$local_sha" || exit 1
+  fi
+done
