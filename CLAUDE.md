@@ -96,13 +96,13 @@ After Vite, `npm run build` writes static files for crawlers into `dist/`. It re
 
 Crawlers must read what visitors see, so put new copy in `src/data/site.js` and render it in the component. An empty boutique is `noindex` and left out of the sitemap and llms files. The generators overwrite the `public/` copies of `robots.txt` and `sitemap.xml`, so edit the scripts, not those files.
 
-`seo/SEO-LLM-PLAYBOOK.md` explains the approach. In production, nginx serves the bot pages to crawlers; its config isn't in the repo, and `seo/nginx-seo.conf` lists the settings still to apply there.
+`seo/SEO-LLM-PLAYBOOK.md` explains the approach. In production, the nginx `is_bot` block rewrites `/`, `/cinema`, `/boutique` and `/offres` to `dist/seo/` one route at a time, so any other route, including `/services/*`, gets the SPA shell until it has its own rule. The nginx config isn't in the repo; `seo/nginx-seo.conf` lists the settings still to apply there.
 
 ### Business facts outside `src/data/site.js`
 
 - **Prices:** `database/offres.sql`, fallbacks in `Offres.jsx`, `rag/naatal-knowledge-base.md`
 - **Contact details:** `rag/naatal-knowledge-base.md`, `database/init.sql`
-- **New public route:** `App.jsx`, `ROUTE_META`, and a page in `scripts/seo-content.mjs`
+- **New public route:** `App.jsx`, `ROUTE_META`, a page in `scripts/seo-content.mjs`, and a rewrite rule in production nginx
 
 ## Conventions
 

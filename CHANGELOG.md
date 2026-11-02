@@ -10,6 +10,10 @@ Les évolutions du site NAATAL Studio sont notées ici. Le projet suit le [versi
 
 ## [Non publié]
 
+### Modifié
+
+- Règle nginx des pages de services documentée dans `seo/nginx-seo.conf`, à appliquer avant le déploiement complet.
+
 ## [1.0.0] - 2026-11-02
 
 ### Ajouté
