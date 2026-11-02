@@ -13,7 +13,35 @@ const OUT = path.resolve(DIST, 'seo')
 
 const SITE = 'https://naatalstudio.com'
 const TODAY = new Date().toISOString().slice(0, 10)
-const OG_DEFAULT = `${SITE}/og-image.png`
+const OG_DEFAULT = 'https://i.ytimg.com/vi/GYvw3r4pHo8/maxresdefault.jpg'
+const LOGO = `${SITE}/favicon-512x512.png`
+
+// Videos visibles dans la section Realisations de l'accueil
+const VIDEOS = [
+  {
+    id: 'GYvw3r4pHo8',
+    name: 'Film Hitachi — NAATAL Studio',
+    description: 'Vidéo de conférence réalisée par NAATAL Studio pour AMS & HITACHI.',
+    uploadDate: '2026-03-15T09:59:05-07:00',
+    duration: 'PT2M2S',
+  },
+  {
+    id: 'Xnahc3dyxI8',
+    name: 'Nous avons shooté pour Cosy Home — NAATAL Studio',
+    description: 'Couverture événementielle réalisée par NAATAL Studio pour la marque Cosy Home.',
+    uploadDate: '2026-02-02T09:11:46-08:00',
+    duration: 'PT1M57S',
+  },
+  {
+    id: 'P4MzYbSNYEI',
+    name: 'Documentaire Gohitafla — NAATAL Studio',
+    description: 'Vidéo de campagne législative réalisée par NAATAL Studio pour Djé Bi Landry à Gohitafla.',
+    uploadDate: '2026-02-02T09:11:34-08:00',
+    duration: 'PT2M30S',
+  },
+]
+
+const thumbnail = (video) => `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`
 
 const escape = (s = '') => String(s)
   .replace(/&/g, '&amp;')
@@ -38,6 +66,7 @@ const PAGES = [
     priority: 1.0,
     changefreq: 'weekly',
     schema: 'organization',
+    videos: true,
   },
   {
     slug: 'cinema',
@@ -86,7 +115,8 @@ const orgJsonLd = {
   '@type': 'Organization',
   name: 'NAATAL Studio',
   url: SITE,
-  logo: `${SITE}/img/logo.png`,
+  logo: LOGO,
+  image: OG_DEFAULT,
   email: 'naatalproduction@gmail.com',
   telephone: '+225 07 19 95 65 86',
   address: {
@@ -116,6 +146,24 @@ const serviceJsonLd = {
   ],
 }
 
+const videoJsonLd = VIDEOS.map(video => ({
+  '@context': 'https://schema.org',
+  '@type': 'VideoObject',
+  name: video.name,
+  description: video.description,
+  thumbnailUrl: [thumbnail(video)],
+  uploadDate: video.uploadDate,
+  duration: video.duration,
+  embedUrl: `https://www.youtube.com/embed/${video.id}`,
+}))
+
+const renderVideos = () => `  <h2>Nos réalisations</h2>
+${VIDEOS.map(video => `  <h3>${escape(video.name)}</h3>
+  <p>${escape(video.description)}</p>
+  <img src="${thumbnail(video)}" alt="${escape(video.name)}" width="1280" height="720" />
+  <iframe src="https://www.youtube.com/embed/${video.id}" title="${escape(video.name)}" width="1280" height="720" loading="lazy" allowfullscreen></iframe>`).join('\n')}
+`
+
 const buildJsonLd = (kind) => {
   if (kind === 'organization') return JSON.stringify(orgJsonLd)
   if (kind === 'service') return JSON.stringify(serviceJsonLd)
@@ -133,6 +181,9 @@ const renderHtml = (page) => {
   <title>${escape(page.title)}</title>
   <meta name="description" content="${escape(page.description)}" />
   <link rel="canonical" href="${url}" />
+  <link rel="icon" type="image/png" sizes="192x192" href="${SITE}/favicon-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="${LOGO}" />
+  <link rel="apple-touch-icon" sizes="180x180" href="${SITE}/apple-touch-icon.png" />
 
   <meta property="og:type" content="website" />
   <meta property="og:url" content="${url}" />
@@ -148,7 +199,7 @@ const renderHtml = (page) => {
   <meta name="twitter:title" content="${escape(page.title)}" />
   <meta name="twitter:description" content="${escape(page.description)}" />
   <meta name="twitter:image" content="${OG_DEFAULT}" />
-${jsonLd ? `  <script type="application/ld+json">${jsonLd}</script>\n` : ''}
+${jsonLd ? `  <script type="application/ld+json">${jsonLd}</script>\n` : ''}${page.videos ? `  <script type="application/ld+json">${JSON.stringify(videoJsonLd)}</script>\n` : ''}
   <script>
     if (!/bot|crawl|spider|facebook|twitter|linkedin|whatsapp|telegram|slack|discord|preview|embed/i.test(navigator.userAgent)) {
       window.location.replace('${url}');
@@ -156,9 +207,10 @@ ${jsonLd ? `  <script type="application/ld+json">${jsonLd}</script>\n` : ''}
   </script>
 </head>
 <body>
+  <img src="${LOGO}" alt="Logo NAATAL Studio" width="512" height="512" />
   <h1>${escape(page.h1)}</h1>
 ${page.body.map(p => `  <p>${escape(p)}</p>`).join('\n')}
-  <p><a href="${url}">Voir le site</a></p>
+${page.videos ? renderVideos() : ''}  <p><a href="${url}">Voir le site</a></p>
 </body>
 </html>
 `
