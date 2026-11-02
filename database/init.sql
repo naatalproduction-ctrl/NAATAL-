@@ -207,7 +207,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO settings (key, value, type, description) VALUES
 ('site_name', 'NAATAL Production', 'text', 'Nom du site'),
 ('site_slogan', 'L''Art de Raconter des Histoires', 'text', 'Slogan du site'),
-('contact_email', 'naatalproduction@gmail.com', 'text', 'Email de contact'),
+('contact_email', 'hello@naatalstudio.com', 'text', 'Email de contact'),
 ('contact_phone', '+225 07 19 95 65 86', 'text', 'Téléphone de contact'),
 ('contact_address', 'Abidjan, Côte d''Ivoire', 'text', 'Adresse'),
 ('social_facebook', 'https://facebook.com/naatalproduction', 'text', 'Lien Facebook'),
@@ -217,11 +217,7 @@ INSERT INTO settings (key, value, type, description) VALUES
 ('offres_enabled', 'false', 'boolean', 'Afficher les offres sur le site')
 ON CONFLICT (key) DO NOTHING;
 
--- Admin par défaut (mot de passe: REDACTED)
--- Username: admin
-INSERT INTO admins (username, email, password, role) VALUES
-('admin', 'admin@naatalstudio.com', 'REDACTED', 'superadmin')
-ON CONFLICT (username) DO NOTHING;
+-- Le premier administrateur se cree avec : npm run admin:create (dans server/)
 
 -- ============================================
 -- FONCTION: Mise à jour automatique de updated_at

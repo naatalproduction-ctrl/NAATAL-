@@ -6,7 +6,7 @@ const https = require('https');
 
 // Helper: requête Serper
 const serperRequest = (path, postData) => {
-  const SERPER_KEY = process.env.SERPER_API_KEY || 'REDACTED';
+  const SERPER_KEY = process.env.SERPER_API_KEY;
   return new Promise((resolve) => {
     const options = {
       hostname: 'google.serper.dev',
@@ -38,6 +38,12 @@ const serperRequest = (path, postData) => {
   });
 };
 
+const serperKeyMissing = (res) => {
+  if (process.env.SERPER_API_KEY) return false;
+  res.status(503).json({ success: false, error: 'Clé Serper non configurée sur le serveur' });
+  return true;
+};
+
 // Recherche Google Maps via Serper API
 const scrapeGoogleMaps = async (req, res) => {
   try {
@@ -46,6 +52,8 @@ const scrapeGoogleMaps = async (req, res) => {
     if (!searchQuery) {
       return res.status(400).json({ success: false, error: 'Requête de recherche requise' });
     }
+
+    if (serperKeyMissing(res)) return;
 
     const fullQuery = location ? `${searchQuery} ${location}` : searchQuery;
     const postData = JSON.stringify({ q: fullQuery, num: parseInt(limit), gl: 'ci', hl: 'fr' });
@@ -85,6 +93,8 @@ const searchGoogle = async (req, res) => {
     if (!searchQuery) {
       return res.status(400).json({ success: false, error: 'Requête de recherche requise' });
     }
+
+    if (serperKeyMissing(res)) return;
 
     const fullQuery = location ? `${searchQuery} ${location}` : searchQuery;
     const postData = JSON.stringify({ q: fullQuery, num: parseInt(limit), gl: 'ci', hl: 'fr' });

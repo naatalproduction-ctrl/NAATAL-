@@ -9,6 +9,7 @@ const path = require('path');
 require('dotenv').config();
 
 const { pool } = require('./config/database');
+const { version } = require('./package.json');
 
 // Importer les routes
 const authRoutes = require('./routes/auth');
@@ -74,7 +75,7 @@ const contactLimiter = rateLimit({
   max: 30,
   message: { success: false, error: 'Trop de messages envoyés, réessayez plus tard' }
 });
-app.use('/api/messages', contactLimiter);
+app.post('/api/messages', contactLimiter);
 
 // Body parsing with safe limits
 app.use(express.json({ limit: '1mb' }));
@@ -123,7 +124,7 @@ app.get('/api', (req, res) => {
   res.json({
     success: true,
     message: 'API NAATAL Production',
-    version: '1.0.0'
+    version
   });
 });
 
