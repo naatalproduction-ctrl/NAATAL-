@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "db:init": "psql -d naatal_db -f ../database/init.sql -f ../database/offres.sql -f ../database/leads.sql -f ../database/portfolio.sql",
+    "db:migrate": "node scripts/migrate.js",
     "db:sync": "node scripts/sync-from-production.js",
     "admin:create": "node scripts/create-admin.js"
   },

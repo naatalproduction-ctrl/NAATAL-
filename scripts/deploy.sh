@@ -126,6 +126,7 @@ REMOTE
 ssh "${SSH_OPTS[@]}" "$HOST" bash -s <<'REMOTE'
 set -eu
 cd /var/www/naatal/server
+node scripts/migrate.js
 node -e "
 require('dotenv').config();
 const {Pool}=require('pg');

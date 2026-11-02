@@ -53,6 +53,8 @@ npm run db:init
 
 Seed data only goes into empty tables, so the SQL files can be rerun on an existing database, apart from harmless `CREATE TRIGGER` errors. Don't rely on `ON CONFLICT DO NOTHING` for seeds: these tables have no unique constraint, so it never fires.
 
+`CREATE TABLE IF NOT EXISTS` never changes an existing table, so schema changes also go in `server/scripts/migrate.js` (`npm run db:migrate`), which can be rerun and which `deploy.sh` runs on production.
+
 Production is the source of truth for content. `npm run db:sync` (in `server/`) replaces the local `medias`, `cinema_items` and `portfolio_*` rows with production's public API data, and refuses to run on a non-local database.
 
 On this Mac, PostgreSQL 15 comes from Homebrew and isn't on `PATH`; its tools are in `/opt/homebrew/opt/postgresql@15/bin`.
@@ -163,4 +165,4 @@ bash scripts/deploy.sh --nginx    # Apply scripts/nginx-update.sh; asks for the 
 - `deploy.sh` skips `controllers/prospectsController.js` while the server's `.env` has no `SERPER_API_KEY`, so prospect search keeps working on the old file.
 - It never touches `.env`, `node_modules` or `uploads`.
 - `public/videos/` is gitignored and holds only READMEs locally, so the frontend's delete step removes any video that exists only on the server.
-- It doesn't apply SQL changes; run those on the server separately.
+- It runs `server/scripts/migrate.js` after the API restarts. Any other SQL change has to be run on the server separately.
