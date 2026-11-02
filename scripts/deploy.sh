@@ -122,7 +122,7 @@ done
 rollback "injoignable"
 REMOTE
 
-# Migration unique : le site public lit maintenant cet email en base
+# Migrations uniques : le site public lit l'email en base, et le reglage Offres doit exister
 ssh "${SSH_OPTS[@]}" "$HOST" bash -s <<'REMOTE'
 set -eu
 cd /var/www/naatal/server
@@ -130,7 +130,9 @@ node -e "
 require('dotenv').config();
 const {Pool}=require('pg');
 const p=new Pool({host:process.env.DB_HOST,port:process.env.DB_PORT,database:process.env.DB_NAME,user:process.env.DB_USER,password:process.env.DB_PASSWORD});
-p.query(\"update settings set value='hello@naatalstudio.com' where key='contact_email' and value='naatalproduction@gmail.com'\").then(()=>p.end());
+p.query(\"update settings set value='hello@naatalstudio.com' where key='contact_email' and value='naatalproduction@gmail.com'\")
+ .then(()=>p.query(\"insert into settings (key, value, type, description) values ('offres_enabled', 'false', 'boolean', 'Onglet Offres : true = actif, false = désactivé') on conflict (key) do nothing\"))
+ .then(()=>p.end());
 "
 REMOTE
 

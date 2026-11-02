@@ -32,24 +32,24 @@ export const defaultMedias = [
   // === DOCUMENTAIRES ===
   { 
     id: 1, 
-    name: 'Documentaire - Les Racines', 
+    name: 'Documentaire',
     type: 'youtube', 
     url: 'https://www.youtube.com/embed/P4MzYbSNYEI', 
     thumbnail: '',
     category: 'documentaire', 
-    description: 'Un voyage au coeur des traditions africaines',
+    description: '',
     featured: true,
     order: 1
   },
   // === CORPORATE ===
   { 
     id: 3, 
-    name: 'MAS & HITACHI', 
-    type: 'youtube', 
-    url: 'https://www.youtube.com/embed/ldC0Da_dF3E', 
+    name: 'AMS & HITACHI',
+    type: 'youtube',
+    url: 'https://www.youtube.com/embed/GYvw3r4pHo8',
     thumbnail: '',
     category: 'corporate',
-    description: 'Film institutionnel pour MAS & HITACHI',
+    description: 'Vidéo de conférence pour AMS & HITACHI',
     featured: true,
     order: 1
   },

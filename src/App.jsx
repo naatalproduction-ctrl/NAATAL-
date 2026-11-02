@@ -96,7 +96,7 @@ function AppContent() {
               <APropos />
               <Prestations />
               <Audiovisuel />
-              {offresEnabled && <Offres />}
+              {offresEnabled && <Suspense fallback={null}><Offres /></Suspense>}
               <Partners />
               <FAQ />
               <Contact />

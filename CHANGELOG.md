@@ -13,6 +13,8 @@ Les évolutions du site NAATAL Studio sont notées ici. Le projet suit le [versi
 ### Ajouté
 
 - Scripts `deploy.sh` et `nginx-update.sh` : sauvegarde du serveur, simulation et retour arrière automatique.
+- Interrupteur Actif / Désactivé de l'onglet Offres dans les paramètres de l'admin, enregistré en base dans `offres_enabled`.
+- Commande `npm run db:sync` qui recopie le contenu public de production dans la base locale.
 
 ### Modifié
 
@@ -21,6 +23,9 @@ Les évolutions du site NAATAL Studio sont notées ici. Le projet suit le [versi
 ### Corrigé
 
 - Les fichiers SQL ne recréent plus les données d'exemple quand on les relance.
+- Titres des vidéos dans les données d'exemple alignés sur la production, dont « AMS & HITACHI ».
+- La page d'accueil ne clignote plus au chargement de la section Offres.
+- Le bouton WhatsApp et les liens des offres suivent le téléphone enregistré dans l'admin.
 
 ## [1.0.0] - 2026-11-02
 

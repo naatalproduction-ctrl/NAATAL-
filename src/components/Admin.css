@@ -1379,6 +1379,35 @@
   margin-bottom: 0;
 }
 
+.setting-switch {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.setting-switch button {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.setting-switch button.is-active {
+  background: #c9a84c;
+  color: #060606;
+}
+
+.setting-switch button:disabled {
+  cursor: wait;
+}
+
 .setting-note {
   margin-top: 18px;
   padding: 14px;

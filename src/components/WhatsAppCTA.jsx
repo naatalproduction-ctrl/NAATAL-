@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSite } from '../context/SiteContext'
+import { BUSINESS } from '../data/site'
 import './WhatsAppCTA.css'
 
 export default function WhatsAppCTA() {
   const { siteInfo } = useSite()
   const [isHovered, setIsHovered] = useState(false)
 
-  const phone = (siteInfo.whatsapp_number || '+2250719956586').replace(/[^0-9+]/g, '')
+  const phone = (siteInfo.phone || BUSINESS.phone).replace(/\D/g, '')
   const message = siteInfo.whatsapp_message || 'Bonjour, je souhaite demander un devis.'
-  const url = `https://wa.me/${phone.replace('+', '')}?text=${encodeURIComponent(message)}`
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
 
   return (
     <div

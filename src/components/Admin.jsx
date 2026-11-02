@@ -184,6 +184,17 @@ export default function Admin() {
       .map(field => [field.key, generalValue(field).trim()])
   )
 
+  const [savingOffres, setSavingOffres] = useState(false)
+  const [offresError, setOffresError] = useState('')
+
+  const handleToggleOffres = async (enabled) => {
+    setSavingOffres(true)
+    setOffresError('')
+    const result = await updateSettings({ offres_enabled: String(enabled) })
+    setSavingOffres(false)
+    if (!result?.success) setOffresError(result?.error || 'Enregistrement impossible')
+  }
+
   const handleSaveGeneral = async () => {
     const missing = GENERAL_FIELDS.find(field => !generalValue(field).trim())
     if (missing) {
@@ -3603,7 +3614,7 @@ export default function Admin() {
                               type="text"
                               value={newMedia.name}
                               onChange={e => setNewMedia({...newMedia, name: e.target.value})}
-                              placeholder="Ex: MAS & HITACHI"
+                              placeholder="Ex: AMS & HITACHI"
                             />
                           </div>
                           <div className="form-group">
@@ -6951,6 +6962,37 @@ export default function Admin() {
                     {generalStatus && (
                       <div className={`user-alert ${generalStatus.type}`}>{generalStatus.text}</div>
                     )}
+                  </motion.div>
+
+                  <motion.div className="setting-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                    <h3>Affichage du site</h3>
+                    <div className="setting-item">
+                      <label id="setting-offres-label">Onglet Offres</label>
+                      <div className="setting-switch" role="group" aria-labelledby="setting-offres-label">
+                        <button
+                          type="button"
+                          className={siteInfo.offresEnabled ? 'is-active' : ''}
+                          aria-pressed={siteInfo.offresEnabled === true}
+                          disabled={savingOffres}
+                          onClick={() => handleToggleOffres(true)}
+                        >
+                          Actif
+                        </button>
+                        <button
+                          type="button"
+                          className={siteInfo.offresEnabled ? '' : 'is-active'}
+                          aria-pressed={siteInfo.offresEnabled !== true}
+                          disabled={savingOffres}
+                          onClick={() => handleToggleOffres(false)}
+                        >
+                          Désactivé
+                        </button>
+                      </div>
+                      {offresError && <div className="user-alert error">{offresError}</div>}
+                    </div>
+                    <p className="setting-note">
+                      Actif : l'onglet, la section et la page Offres apparaissent sur le site.
+                    </p>
                   </motion.div>
 
                   <motion.div className="setting-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>

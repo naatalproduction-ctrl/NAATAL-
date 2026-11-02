@@ -53,6 +53,8 @@ npm run db:init
 
 Seed data only goes into empty tables, so the SQL files can be rerun on an existing database, apart from harmless `CREATE TRIGGER` errors. Don't rely on `ON CONFLICT DO NOTHING` for seeds: these tables have no unique constraint, so it never fires.
 
+Production is the source of truth for content. `npm run db:sync` (in `server/`) replaces the local `medias`, `cinema_items` and `portfolio_*` rows with production's public API data, and refuses to run on a non-local database.
+
 On this Mac, PostgreSQL 15 comes from Homebrew and isn't on `PATH`; its tools are in `/opt/homebrew/opt/postgresql@15/bin`.
 
 ## Architecture
@@ -65,7 +67,7 @@ On this Mac, PostgreSQL 15 comes from Homebrew and isn't on `PATH`; its tools ar
 - `src/App.jsx` holds the routes. `/` stacks section components; `/boutique`, `/cinema`, `/offres` and `/services/:slug` are lazy-loaded pages; `/admin` is lazy-loaded and renders without the Header, Footer and WhatsApp button.
 - `src/data/site.js` is the single source for business facts, visible home copy, service pages, route meta, prices and the FAQ. It has no JSX or imports so the Node SEO scripts can load it too.
 - `src/context/SiteContext.jsx` only covers auth, medias, messages and public settings. Every other module calls its `*API` object from `src/services/api.js` directly in the component.
-- The site name, email and phone are edited in the admin's Paramètres tab and stored in `settings`. The Footer, `Contact`, `Cinema` and `FAQ` read them from `siteInfo` and fall back to `BUSINESS`; SEO files always use `BUSINESS`, so a contact change must be made in both places.
+- The site name, email and phone are edited in the admin's Paramètres tab and stored in `settings`. The Footer, `Contact`, `Cinema`, `FAQ`, `Offres` and `WhatsAppCTA` read them from `siteInfo` and fall back to `BUSINESS`; SEO files always use `BUSINESS`, so a contact change must be made in both places.
 - `src/services/api.js` wraps all API calls and attaches the JWT stored in `localStorage` as `naatal_token`. Responses are unwrapped by checking `success` and reading `data`.
 - `src/components/Admin.jsx` (about 7,200 lines) is one component containing nearly every back-office module. It switches on `activeTab` (persisted in `sessionStorage`), and per-tab effects load each module's data. `Storyboard.jsx` and `PortfolioAdmin.jsx` are the separate modules it embeds.
 - `Hero.jsx` and `src/data/defaultData.js` aren't imported anywhere.
@@ -81,7 +83,7 @@ On this Mac, PostgreSQL 15 comes from Homebrew and isn't on `PATH`; its tools ar
 
 ### Offres flag
 
-The `offres_enabled` row in the `settings` table (default `false`) reaches the frontend as `siteInfo.offresEnabled`. It controls the home section, the header link and the `/offres` route, which redirects to `/` when off. `Offres.jsx` reads the `offres` table and falls back to hard-coded packages.
+The `offres_enabled` row in the `settings` table (`true` = actif, `false` = désactivé, default `false`) reaches the frontend as `siteInfo.offresEnabled`, and the admin's Paramètres tab switches it. It controls the home section, the header link and the `/offres` route, which redirects to `/` when off. `Offres.jsx` reads the `offres` table and falls back to hard-coded packages.
 
 The SEO build reads the same flag from the production API. When it's off or unreadable, the build leaves out `/offres` and all prices, so changing the flag only reaches the SEO files at the next frontend deploy.
 

@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { offresAPI } from '../services/api'
+import { useSite } from '../context/SiteContext'
+import { BUSINESS } from '../data/site'
 import './Offres.css'
-
-const WA_NUMBER = '2250719956586'
 
 const WA_MESSAGES = {
   essentiel: encodeURIComponent(
@@ -34,8 +34,6 @@ const WA_MESSAGES = {
     "Bonjour Naatal Studio 👋\n\nJe souhaite réserver un échange de 20 minutes pour identifier la formule adaptée à mon projet.\n\nMon entreprise : [à préciser]\nMon besoin : [à préciser]\nDisponibilités : [à préciser]\n\nMerci 🙏"
   ),
 }
-
-const waLink = (key) => `https://wa.me/${WA_NUMBER}?text=${WA_MESSAGES[key]}`
 
 const FALLBACK_PACKAGES = [
   {
@@ -198,6 +196,9 @@ const normalizeOneoff = (row) => ({
 })
 
 export default function Offres() {
+  const { siteInfo } = useSite()
+  const whatsappNumber = (siteInfo.phone || BUSINESS.phone).replace(/\D/g, '')
+  const waLink = (key) => `https://wa.me/${whatsappNumber}?text=${WA_MESSAGES[key]}`
   const [billing, setBilling] = useState('monthly')
   const [apiData, setApiData] = useState(null)
 

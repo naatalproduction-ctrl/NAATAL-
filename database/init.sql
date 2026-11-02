@@ -200,10 +200,10 @@ BEGIN
 IF NOT EXISTS (SELECT 1 FROM medias) THEN
 INSERT INTO medias (name, description, type, url, category_id, featured, display_order) VALUES
 -- Documentaires
-('Documentaire - Les Racines', 'Un voyage au coeur des traditions africaines', 'youtube', 'https://www.youtube.com/embed/P4MzYbSNYEI', 1, true, 1),
+('Documentaire', NULL, 'youtube', 'https://www.youtube.com/embed/P4MzYbSNYEI', 1, true, 1),
 -- Corporate
-('MAS & HITACHI', 'Film institutionnel pour MAS & HITACHI', 'youtube', 'https://www.youtube.com/embed/ldC0Da_dF3E', 2, true, 1),
-('Cosy Home', 'Présentation de la marque Cosy Home', 'youtube', 'https://www.youtube.com/embed/Xnahc3dyxI8', 2, true, 2);
+('AMS & HITACHI', 'Vidéo de conférence pour AMS & HITACHI', 'youtube', 'https://www.youtube.com/embed/GYvw3r4pHo8', 2, true, 1),
+('Cosy Home', 'Couverture événementielle pour la marque Cosy Home', 'youtube', 'https://www.youtube.com/embed/Xnahc3dyxI8', 2, true, 2);
 END IF;
 END $$;
 
@@ -218,7 +218,7 @@ INSERT INTO settings (key, value, type, description) VALUES
 ('social_instagram', 'https://instagram.com/naatalproduction', 'text', 'Lien Instagram'),
 ('social_youtube', 'https://youtube.com/@naatalproduction', 'text', 'Lien YouTube'),
 ('social_linkedin', '', 'text', 'Lien LinkedIn'),
-('offres_enabled', 'false', 'boolean', 'Afficher les offres sur le site')
+('offres_enabled', 'false', 'boolean', 'Onglet Offres : true = actif, false = désactivé')
 ON CONFLICT (key) DO NOTHING;
 
 -- Le premier administrateur se cree avec : npm run admin:create (dans server/)
