@@ -7,13 +7,13 @@ const WA_NUMBER = '2250719956586'
 
 const WA_MESSAGES = {
   essentiel: encodeURIComponent(
-    "Bonjour Naatal Studio 👋\n\nJe suis intéressé(e) par le package *Essentiel* (200 000 FCFA/mois).\n\nVoici ce que j'aimerais savoir :\n→ Disponibilités pour démarrer\n→ Processus de démarrage\n→ Modalités de paiement\n\nDans l'attente de votre retour 🙏"
+    "Bonjour Naatal Studio 👋\n\nJe suis intéressé(e) par le package *Essentiel* (300 000 FCFA/mois).\n\nVoici ce que j'aimerais savoir :\n→ Disponibilités pour démarrer\n→ Processus de démarrage\n→ Modalités de paiement\n\nDans l'attente de votre retour 🙏"
   ),
   corporate: encodeURIComponent(
-    "Bonjour Naatal Studio 👋\n\nJe suis intéressé(e) par le package *Corporate* (400 000 FCFA/mois).\n\nMon entreprise : [à préciser]\nMon besoin : production vidéo mensuelle régulière\n\nJ'aimerais qu'on discute de :\n→ Le contenu du package en détail\n→ Les disponibilités pour un premier tournage\n→ La signature du contrat\n\nMerci d'avance 🙏"
+    "Bonjour Naatal Studio 👋\n\nJe suis intéressé(e) par le package *Corporate* (700 000 FCFA/mois).\n\nMon entreprise : [à préciser]\nMon besoin : production vidéo mensuelle régulière\n\nJ'aimerais qu'on discute de :\n→ Le contenu du package en détail\n→ Les disponibilités pour un premier tournage\n→ La signature du contrat\n\nMerci d'avance 🙏"
   ),
   premium: encodeURIComponent(
-    "Bonjour Naatal Studio 👋\n\nJe suis intéressé(e) par le package *Premium* (700 000 FCFA/mois).\n\nStructure : [à préciser]\nVolume estimé : 6 à 8 vidéos / mois\n\nJ'aimerais organiser une réunion pour discuter de :\n→ Notre stratégie de contenu vidéo\n→ Le planning de production sur 3 mois\n→ Les modalités contractuelles\n\nDans l'attente de votre retour 🙏"
+    "Bonjour Naatal Studio 👋\n\nJe suis intéressé(e) par le package *Premium* (1 100 000 FCFA/mois).\n\nStructure : [à préciser]\nVolume estimé : 6 à 8 vidéos / mois\n\nJ'aimerais organiser une réunion pour discuter de :\n→ Notre stratégie de contenu vidéo\n→ Le planning de production sur 3 mois\n→ Les modalités contractuelles\n\nDans l'attente de votre retour 🙏"
   ),
   devis: encodeURIComponent(
     "Bonjour Naatal Studio 👋\n\nJe souhaite obtenir un devis pour un projet ponctuel.\n\nType de projet : [à préciser]\nDate souhaitée : [à préciser]\nBudget estimé : [à préciser]\n\nMerci de me recontacter 🙏"
@@ -42,7 +42,7 @@ const FALLBACK_PACKAGES = [
     id: 'essentiel',
     name: 'Essentiel',
     target: 'PME & Startups',
-    price: 200000,
+    price: 300000,
     period: '/ mois',
     featured: false,
     description: "L'entrée idéale pour une présence vidéo régulière et professionnelle.",
@@ -62,7 +62,7 @@ const FALLBACK_PACKAGES = [
     id: 'corporate',
     name: 'Corporate',
     target: 'Entreprises mid-size',
-    price: 400000,
+    price: 700000,
     period: '/ mois',
     featured: true,
     description: 'Le package préféré des directions marketing. Visibilité et récurrence.',
@@ -83,7 +83,7 @@ const FALLBACK_PACKAGES = [
     id: 'premium',
     name: 'Premium',
     target: 'Grandes entreprises & Institutions',
-    price: 700000,
+    price: 1100000,
     period: '/ mois',
     featured: false,
     description: 'Une présence cinématographique complète. Pour ceux qui veulent dominer.',
