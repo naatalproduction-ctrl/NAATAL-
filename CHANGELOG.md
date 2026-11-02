@@ -10,6 +10,8 @@ Les évolutions du site NAATAL Studio sont notées ici. Le projet suit le [versi
 
 ## [Non publié]
 
+## [1.0.0] - 2026-11-02
+
 ### Ajouté
 
 - Cinq pages de services : film institutionnel, couverture événementielle, publicité vidéo, clip musical, vidéo immobilière et drone.
