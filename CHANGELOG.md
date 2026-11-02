@@ -19,6 +19,7 @@ Les évolutions du site NAATAL Studio sont notées ici. Le projet suit le [versi
 ### Modifié
 
 - Règle nginx des pages de services documentée dans `seo/nginx-seo.conf`.
+- `deploy.sh --nginx` demande le mot de passe en français et confirme quand il est accepté.
 
 ### Corrigé
 

@@ -36,7 +36,8 @@ sync_files() {
 
 if [ "${1:-}" = "--nginx" ]; then
   scp "${SSH_OPTS[@]}" scripts/nginx-update.sh "$HOST:nginx-update.sh"
-  ssh -t "${SSH_OPTS[@]}" "$HOST" 'bash nginx-update.sh && rm nginx-update.sh'
+  # Connexion directe : le mot de passe sudo ne passe pas par la connexion partagee
+  ssh -t -o ConnectTimeout=10 -o ControlMaster=no -o ControlPath=none "$HOST" 'bash nginx-update.sh && rm nginx-update.sh'
   exit 0
 fi
 

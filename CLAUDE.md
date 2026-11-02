@@ -160,7 +160,7 @@ bash scripts/deploy.sh --nginx    # Apply scripts/nginx-update.sh; asks for the 
 ```
 
 - `deploy.sh` runs from a clean `main`, builds, and restores the backup if the API fails its health check. It prints the rollback command at the end; backups are in `~/naatal-backups` on the server.
-- `joseph` has no passwordless sudo, so nginx changes need the user. `nginx-update.sh` restores the previous config if `nginx -t` fails.
+- `joseph` has no passwordless sudo, so nginx changes need the user, in the macOS Terminal app: text typed in the desktop app's Terminal panel never reached the `sudo` prompt. `nginx-update.sh` restores the previous config if `nginx -t` fails.
 - `nginx-update.sh` also sets `expires -1` on `location /`. Until it's applied, HTML has no `Cache-Control`, so browsers can reuse the previous page and its old bundle after a deploy.
 - `deploy.sh` skips `controllers/prospectsController.js` while the server's `.env` has no `SERPER_API_KEY`, so prospect search keeps working on the old file.
 - It never touches `.env`, `node_modules` or `uploads`.

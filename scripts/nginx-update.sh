@@ -35,6 +35,9 @@ if cmp -s "$CONF" "$NEXT"; then
   exit 0
 fi
 
+sudo -v -p "Mot de passe de %u (rien ne s'affiche), puis Entrée : "
+echo "Mot de passe accepté."
+
 BACKUP="$HOME/naatal-backups/nginx-$(date +%Y%m%d-%H%M%S).conf"
 mkdir -p "$(dirname "$BACKUP")"
 cp "$CONF" "$BACKUP"
