@@ -25,6 +25,7 @@ Les évolutions du site NAATAL Studio sont notées ici. Le projet suit le [versi
 - Les fichiers SQL ne recréent plus les données d'exemple quand on les relance.
 - Titres des vidéos dans les données d'exemple alignés sur la production, dont « AMS & HITACHI ».
 - La page d'accueil ne clignote plus au chargement de la section Offres.
+- `nginx-update.sh` fait revalider le HTML à chaque visite : une nouvelle version s'affiche sans vider le cache du navigateur.
 - Le bouton WhatsApp et les liens des offres suivent le téléphone enregistré dans l'admin.
 
 ## [1.0.0] - 2026-11-02

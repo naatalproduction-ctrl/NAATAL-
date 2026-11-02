@@ -98,7 +98,7 @@ After Vite, `npm run build` writes static files for crawlers into `dist/`. It re
 
 Crawlers must read what visitors see, so put new copy in `src/data/site.js` and render it in the component. An empty boutique is `noindex` and left out of the sitemap and llms files. The generators overwrite the `public/` copies of `robots.txt` and `sitemap.xml`, so edit the scripts, not those files.
 
-`seo/SEO-LLM-PLAYBOOK.md` explains the approach. In production, the nginx `is_bot` block rewrites `/`, `/cinema`, `/boutique` and `/offres` to `dist/seo/` one route at a time, so any other route, including `/services/*`, gets the SPA shell until it has its own rule. The nginx config isn't in the repo; `seo/nginx-seo.conf` lists the settings still to apply there.
+`seo/SEO-LLM-PLAYBOOK.md` explains the approach. In production, the nginx `is_bot` block rewrites `/`, `/cinema`, `/boutique` and `/offres` to `dist/seo/` one route at a time. Any other route returns 404 to bots, because `try_files` doesn't apply inside that `if`, so `/services/*` needs the rule in `scripts/nginx-update.sh`. The nginx config isn't in the repo; `seo/nginx-seo.conf` lists the settings still to apply there.
 
 ### Business facts outside `src/data/site.js`
 
@@ -159,6 +159,7 @@ bash scripts/deploy.sh --nginx    # Apply scripts/nginx-update.sh; asks for the 
 
 - `deploy.sh` runs from a clean `main`, builds, and restores the backup if the API fails its health check. It prints the rollback command at the end; backups are in `~/naatal-backups` on the server.
 - `joseph` has no passwordless sudo, so nginx changes need the user. `nginx-update.sh` restores the previous config if `nginx -t` fails.
+- `nginx-update.sh` also sets `expires -1` on `location /`. Until it's applied, HTML has no `Cache-Control`, so browsers can reuse the previous page and its old bundle after a deploy.
 - `deploy.sh` skips `controllers/prospectsController.js` while the server's `.env` has no `SERPER_API_KEY`, so prospect search keeps working on the old file.
 - It never touches `.env`, `node_modules` or `uploads`.
 - `public/videos/` is gitignored and holds only READMEs locally, so the frontend's delete step removes any video that exists only on the server.

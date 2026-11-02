@@ -14,6 +14,9 @@ cp "$CONF" "$NEXT"
 # Pages de services pour les robots
 grep -q 'seo/services' "$NEXT" || sed -i '/rewrite \^\/offres\/?\$/a\            rewrite ^/services/([a-z0-9-]+)/?$ /seo/services/$1.html last;' "$NEXT"
 
+# HTML revalide a chaque visite : une nouvelle version s'affiche sans vider le cache
+grep -q 'expires -1;' "$NEXT" || sed -i '/^    location \/ {$/a\        expires -1;' "$NEXT"
+
 # Compression
 grep -q 'gzip_types' "$NEXT" || sed -i '0,/index index.html;/s//index index.html;\n\n    gzip_comp_level 6;\n    gzip_min_length 1024;\n    gzip_vary on;\n    gzip_proxied any;\n    gzip_types text\/css application\/javascript text\/javascript application\/json image\/svg+xml text\/plain text\/markdown application\/xml;/' "$NEXT"
 
