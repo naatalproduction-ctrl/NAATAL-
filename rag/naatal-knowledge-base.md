@@ -11,7 +11,7 @@
 - **Raison sociale :** NAATAL Studio
 - **Domaine :** naatalstudio.com
 - **Activité principale :** Production audiovisuelle et cinéma
-- **Siège :** Cocody, Abidjan, Côte d'Ivoire
+- **Siège :** Koumassi, Abidjan, Côte d'Ivoire
 - **Marchés :** Côte d'Ivoire, Afrique de l'Ouest (déplacements sur devis)
 - **Année de création :** 2024
 - **Langue de travail :** Français (sous-titres / version anglaise sur demande)
@@ -118,7 +118,7 @@ Différentiateurs :
 ## 6. FAQ exhaustive
 
 **Où êtes-vous basés ?**
-À Abidjan, dans le quartier de Cocody. Nous nous déplaçons partout en Côte
+À Abidjan, dans le quartier de Koumassi. Nous nous déplaçons partout en Côte
 d'Ivoire et en Afrique de l'Ouest sur devis (frais de déplacement séparés).
 
 **Quels sont vos délais standards ?**

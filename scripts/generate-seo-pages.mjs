@@ -122,7 +122,7 @@ const orgJsonLd = {
   address: {
     '@type': 'PostalAddress',
     addressLocality: 'Abidjan',
-    addressRegion: 'Cocody',
+    streetAddress: 'Koumassi',
     addressCountry: 'CI',
   },
   sameAs: [

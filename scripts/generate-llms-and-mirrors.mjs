@@ -24,7 +24,7 @@ const BUSINESS = {
   phone: '+225 07 19 95 65 86',
   whatsapp: '+225 07 19 95 65 86',
   whatsappLink: 'https://wa.me/2250719956586',
-  address: 'Cocody, Abidjan, Côte d\'Ivoire',
+  address: 'Koumassi, Abidjan, Côte d\'Ivoire',
   founded: '2024',
   hours: 'Lun–Ven 9h–18h (GMT)',
 }
@@ -60,7 +60,7 @@ const ONEOFFS = [
 ]
 
 const FAQ = [
-  { q: 'Où êtes-vous basés ?', a: 'À Abidjan, dans le quartier de Cocody, Côte d\'Ivoire. Nous nous déplaçons partout en Côte d\'Ivoire et en Afrique de l\'Ouest sur devis.' },
+  { q: 'Où êtes-vous basés ?', a: 'À Abidjan, dans le quartier de Koumassi, Côte d\'Ivoire. Nous nous déplaçons partout en Côte d\'Ivoire et en Afrique de l\'Ouest sur devis.' },
   { q: 'Quels sont vos délais ?', a: 'Livraison standard 4 à 5 jours pour les capsules courtes. Brand Film : 4 à 6 semaines après tournage. Aftermovie événementiel : 5 jours.' },
   { q: 'Quel matériel utilisez-vous ?', a: 'Caméras Sony FX3 + optiques Sigma Art, drone certifié, régie multi-caméra, son professionnel. Backup matériel inclus sur les événements.' },
   { q: 'Quelles sont vos modalités de paiement ?', a: 'Acompte de 40 à 50% à la signature, solde à livraison. Devis ferme et gratuit sous 24 à 48h.' },
